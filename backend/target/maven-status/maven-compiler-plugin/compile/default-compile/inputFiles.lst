@@ -1,4 +1,14 @@
-/workspaces/homeopathy-clinic/backend/src/main/java/com/homeopathy/ClinicApplication.java
+/workspaces/homeopathy-clinic/backend/src/main/java/com/homeopathy/clinic/ClinicApplication.java
+/workspaces/homeopathy-clinic/backend/src/main/java/com/homeopathy/clinic/auth/AuthController.java
+/workspaces/homeopathy-clinic/backend/src/main/java/com/homeopathy/clinic/auth/AuthService.java
+/workspaces/homeopathy-clinic/backend/src/main/java/com/homeopathy/clinic/auth/LoginRequest.java
+/workspaces/homeopathy-clinic/backend/src/main/java/com/homeopathy/clinic/auth/LoginResponse.java
 /workspaces/homeopathy-clinic/backend/src/main/java/com/homeopathy/clinic/config/HealthController.java
+/workspaces/homeopathy-clinic/backend/src/main/java/com/homeopathy/clinic/config/InitialAdminConfig.java
 /workspaces/homeopathy-clinic/backend/src/main/java/com/homeopathy/clinic/config/SecurityConfig.java
 /workspaces/homeopathy-clinic/backend/src/main/java/com/homeopathy/clinic/patient/Patient.java
+/workspaces/homeopathy-clinic/backend/src/main/java/com/homeopathy/clinic/security/JwtConfig.java
+/workspaces/homeopathy-clinic/backend/src/main/java/com/homeopathy/clinic/security/JwtService.java
+/workspaces/homeopathy-clinic/backend/src/main/java/com/homeopathy/clinic/user/Role.java
+/workspaces/homeopathy-clinic/backend/src/main/java/com/homeopathy/clinic/user/User.java
+/workspaces/homeopathy-clinic/backend/src/main/java/com/homeopathy/clinic/user/UserRepository.java

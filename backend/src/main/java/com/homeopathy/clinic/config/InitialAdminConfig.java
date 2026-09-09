@@ -21,7 +21,7 @@ public class InitialAdminConfig {
         u.setLastName("Administrator");
         u.setEmail(e.trim().toLowerCase());
         u.setPassword(p.encode(pw));
-        u.setRole(Role.ADMIN);
+        u.setRole(com.homeopathy.clinic.user.Role.ADMIN);
         u.setActive(true);
         r.save(u);
         System.out.println("Initial ADMIN account created.");

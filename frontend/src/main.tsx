@@ -1,20 +1,20 @@
-import React from 'react';
-import { createRoot } from 'react-dom/client';
-import './styles.css';
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import { BrowserRouter } from "react-router-dom";
 
-function App() {
-  return (
-    <main className="page">
-      <section className="card">
-        <h1>Homeopathy Clinic</h1>
-        <p>Cloud development environment is ready.</p>
-        <div className="status">Frontend: Running</div>
-        <p className="next">Next: patient registration and appointment scheduling.</p>
-      </section>
-    </main>
-  );
-}
+import App from "./App";
+import { AuthProvider } from "./auth/AuthContext";
 
-createRoot(document.getElementById('root')!).render(
-  <React.StrictMode><App /></React.StrictMode>
+import "./index.css";
+
+createRoot(
+  document.getElementById("root")!
+).render(
+  <StrictMode>
+    <BrowserRouter>
+      <AuthProvider>
+        <App />
+      </AuthProvider>
+    </BrowserRouter>
+  </StrictMode>
 );

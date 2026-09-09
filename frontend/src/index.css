@@ -1,0 +1,346 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family:
+    Inter,
+    "Segoe UI",
+    Arial,
+    sans-serif;
+}
+
+.login-page {
+  position: relative;
+  min-height: 100vh;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  overflow: hidden;
+
+  padding: 30px 20px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #e8f7f4 0%,
+      #eef6ff 45%,
+      #f5efff 100%
+    );
+}
+
+.login-background-shape {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(4px);
+  opacity: 0.35;
+}
+
+.shape-one {
+  width: 420px;
+  height: 420px;
+
+  background: #75d6c4;
+
+  top: -160px;
+  left: -140px;
+}
+
+.shape-two {
+  width: 430px;
+  height: 430px;
+
+  background: #8caaf5;
+
+  bottom: -200px;
+  right: -160px;
+}
+
+.login-card {
+  position: relative;
+  z-index: 2;
+
+  width: 100%;
+  max-width: 430px;
+
+  background:
+    rgba(255, 255, 255, 0.96);
+
+  padding: 38px 40px 30px;
+
+  border-radius: 22px;
+
+  border:
+    1px solid rgba(255, 255, 255, 0.7);
+
+  box-shadow:
+    0 20px 60px rgba(30, 70, 100, 0.14);
+}
+
+.clinic-logo {
+  width: 66px;
+  height: 66px;
+
+  margin: 0 auto 16px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 18px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #1ca78c,
+      #3a7bd5
+    );
+
+  box-shadow:
+    0 10px 24px rgba(28, 167, 140, 0.25);
+}
+
+.clinic-logo span {
+  color: white;
+  font-size: 34px;
+  line-height: 1;
+}
+
+.login-card h1 {
+  margin: 0;
+
+  text-align: center;
+
+  font-size: 26px;
+  font-weight: 700;
+
+  color: #163a4d;
+}
+
+.login-subtitle {
+  margin: 7px 0 28px;
+
+  text-align: center;
+
+  font-size: 14px;
+
+  color: #728694;
+}
+
+.welcome-text {
+  margin-bottom: 25px;
+}
+
+.welcome-text h2 {
+  margin: 0 0 5px;
+
+  font-size: 21px;
+
+  color: #243b4a;
+}
+
+.welcome-text p {
+  margin: 0;
+
+  font-size: 14px;
+
+  color: #82929d;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+
+  margin-bottom: 8px;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  color: #344d5c;
+}
+
+.input-wrapper {
+  position: relative;
+}
+
+.input-icon {
+  position: absolute;
+
+  left: 14px;
+  top: 50%;
+
+  transform: translateY(-50%);
+
+  font-size: 15px;
+
+  opacity: 0.6;
+}
+
+.input-wrapper input {
+  width: 100%;
+
+  padding:
+    13px 14px
+    13px 43px;
+
+  border:
+    1px solid #d9e4e9;
+
+  border-radius: 11px;
+
+  outline: none;
+
+  font-size: 15px;
+
+  color: #243b4a;
+
+  background: #fafdfe;
+
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s,
+    background 0.2s;
+}
+
+.input-wrapper input::placeholder {
+  color: #a3b1ba;
+}
+
+.input-wrapper input:focus {
+  background: white;
+
+  border-color: #38aa98;
+
+  box-shadow:
+    0 0 0 4px
+    rgba(56, 170, 152, 0.11);
+}
+
+.login-button {
+  width: 100%;
+
+  margin-top: 5px;
+
+  padding: 14px;
+
+  border: none;
+  border-radius: 11px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #159a82,
+      #377bd1
+    );
+
+  color: white;
+
+  font-size: 15px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  box-shadow:
+    0 8px 22px
+    rgba(48, 123, 190, 0.22);
+
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
+}
+
+.login-button:hover {
+  transform: translateY(-1px);
+
+  box-shadow:
+    0 11px 28px
+    rgba(48, 123, 190, 0.3);
+}
+
+.login-button:active {
+  transform: translateY(0);
+}
+
+.login-button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.login-error {
+  margin-bottom: 16px;
+
+  padding: 11px 13px;
+
+  border:
+    1px solid #ffcaca;
+
+  border-radius: 9px;
+
+  background: #fff5f5;
+
+  color: #bd3d3d;
+
+  font-size: 13px;
+}
+
+.login-footer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  gap: 8px;
+
+  margin-top: 25px;
+
+  padding-top: 20px;
+
+  border-top:
+    1px solid #edf1f3;
+
+  color: #8a9ba5;
+
+  font-size: 11px;
+}
+
+.secure-dot {
+  color: #31ab91;
+}
+
+.page-footer {
+  position: relative;
+  z-index: 2;
+
+  margin-top: 22px;
+
+  font-size: 12px;
+
+  color: #708995;
+}
+
+@media (max-width: 500px) {
+  .login-card {
+    padding:
+      30px
+      24px
+      25px;
+
+    border-radius: 18px;
+  }
+
+  .login-card h1 {
+    font-size: 23px;
+  }
+}
