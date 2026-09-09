@@ -1,12 +1,35 @@
 package com.homeopathy.clinic.security;
-import com.homeopathy.clinic.user.User; import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.oauth2.jwt.*; import org.springframework.stereotype.Service;
-import java.time.*; import java.time.temporal.ChronoUnit;
-@Service public class JwtService {
- private final JwtEncoder encoder; @Value("${app.jwt.expiration-minutes:30}") long mins;
- public JwtService(JwtEncoder e){encoder=e;}
- public String generateToken(User u){Instant n=Instant.now(); JwtClaimsSet c=JwtClaimsSet.builder()
- .issuer("homeopathy-clinic").issuedAt(n).expiresAt(n.plus(mins,ChronoUnit.MINUTES)).subject(u.getEmail())
- .claim("userId",u.getId()).claim("role",u.getRole().name()).claim("firstName",u.getFirstName()).build();
- return encoder.encode(JwtEncoderParameters.from(c)).getTokenValue();}
+
+import com.homeopathy.clinic.user.User;
+import java.time.*;
+import java.time.temporal.ChronoUnit;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.oauth2.jwt.*;
+import org.springframework.stereotype.Service;
+
+@Service
+public class JwtService {
+  private final JwtEncoder encoder;
+
+  @Value("${app.jwt.expiration-minutes:30}")
+  long mins;
+
+  public JwtService(JwtEncoder e) {
+    encoder = e;
+  }
+
+  public String generateToken(User u) {
+    Instant n = Instant.now();
+    JwtClaimsSet c =
+        JwtClaimsSet.builder()
+            .issuer("homeopathy-clinic")
+            .issuedAt(n)
+            .expiresAt(n.plus(mins, ChronoUnit.MINUTES))
+            .subject(u.getEmail())
+            .claim("userId", u.getId())
+            .claim("role", u.getRole().name())
+            .claim("firstName", u.getFirstName())
+            .build();
+    return encoder.encode(JwtEncoderParameters.from(c)).getTokenValue();
+  }
 }
