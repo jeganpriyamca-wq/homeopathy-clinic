@@ -7,6 +7,7 @@ import javax.crypto.spec.SecretKeySpec;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.*;
 import org.springframework.security.oauth2.jwt.*;
+import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 
 @Configuration
 public class JwtConfig {
@@ -25,6 +26,8 @@ public class JwtConfig {
 
   @Bean
   JwtDecoder jwtDecoder(SecretKey k) {
-    return NimbusJwtDecoder.withSecretKey(k).build();
+    return NimbusJwtDecoder.withSecretKey(k)
+    .macAlgorithm(MacAlgorithm.HS256)
+    .build();
   }
 }

@@ -6,6 +6,7 @@ import java.time.temporal.ChronoUnit;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.oauth2.jwt.*;
 import org.springframework.stereotype.Service;
+import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 
 @Service
 public class JwtService {
@@ -30,6 +31,7 @@ public class JwtService {
             .claim("role", u.getRole().name())
             .claim("firstName", u.getFirstName())
             .build();
-    return encoder.encode(JwtEncoderParameters.from(c)).getTokenValue();
+    JwsHeader header = JwsHeader.with(MacAlgorithm.HS256).build();
+    return encoder.encode(JwtEncoderParameters.from(header, c)).getTokenValue();
   }
 }
