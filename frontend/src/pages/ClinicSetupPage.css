@@ -1,0 +1,55 @@
+.clinic-setup { min-height: 100vh; background: #f3f7f6; color: #203b3b; font-family: Inter, "Segoe UI", Arial, sans-serif; padding: 48px 28px; }
+.clinic-setup * { box-sizing: border-box; }
+.setup-shell { max-width: 1160px; margin: 0 auto; }
+.setup-page-heading { display: flex; justify-content: space-between; align-items: center; gap: 24px; margin-bottom: 36px; }
+.setup-eyebrow { color: #317568; font-size: 11px; font-weight: 800; letter-spacing: .16em; }
+.setup-page-heading h1 { margin: 8px 0 12px; font-size: clamp(28px, 4vw, 38px); letter-spacing: -.04em; font-weight: 650; }
+.setup-page-heading p:not(.setup-eyebrow) { color: #617574; line-height: 1.6; margin-bottom: 0; }
+.setup-badge { padding: 10px 16px; border: 1px solid #c4ded7; border-radius: 30px; color: #246b5d; font-size: 12px; font-weight: 650; white-space: nowrap; background: #e9f4ef; }
+.setup-layout { display: grid; grid-template-columns: 225px minmax(0, 1fr); gap: 32px; align-items: start; }
+.setup-sidebar { position: sticky; top: 24px; }
+.setup-sidebar nav { display: grid; gap: 5px; }
+.setup-sidebar a { display: flex; gap: 12px; align-items: center; padding: 13px 10px; color: #3e5b57; text-decoration: none; font-size: 13px; font-weight: 600; border-radius: 8px; }
+.setup-sidebar a:hover { background: #e1eeea; }
+.setup-sidebar a span { color: #77908a; font-size: 11px; }
+.setup-sidebar > p { margin: 24px 10px; border-top: 1px solid #d9e4df; padding-top: 20px; color: #677b75; font-size: 12px; line-height: 1.8; }
+.setup-form { min-width: 0; }
+.setup-required { font-size: 12px; color: #60756f; margin: 0 0 16px; }
+.setup-section { background: white; border: 1px solid #dce7e1; border-radius: 16px; padding: 28px; margin-bottom: 20px; scroll-margin-top: 20px; box-shadow: 0 3px 12px #1b403005; }
+.setup-section-heading { display: flex; gap: 14px; margin-bottom: 25px; align-items: start; }
+.setup-section-heading > span { display: grid; place-items: center; flex: 0 0 34px; height: 34px; border-radius: 10px; background: #edf6f1; color: #367664; font-size: 12px; font-weight: 700; }
+.setup-section h2 { margin: 0 0 7px; font-size: 18px; letter-spacing: -.02em; }
+.setup-section-heading p { color: #6c7e77; font-size: 12px; line-height: 1.6; margin: 0; }
+.setup-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px 20px; }
+.setup-wide { grid-column: 1 / -1; }
+.setup-field { min-width: 0; }
+.setup-field label { display: block; font-size: 12px; font-weight: 650; margin-bottom: 9px; line-height: 1.5; }
+.setup-field label span { color: #307564; }
+.setup-field input, .setup-field select, .setup-field textarea { width: 100%; min-height: 44px; font: inherit; font-size: 14px; color: #243e36; background: #fff; border: 1px solid #cddbd3; border-radius: 8px; padding: 11px 12px; }
+.setup-field textarea { resize: vertical; line-height: 1.6; }
+.setup-field input[readonly] { background: #f3f7f4; color: #5a7065; }
+.setup-field small { display: block; font-size: 11px; color: #64786d; margin-top: 7px; line-height: 1.6; }
+.clinic-setup :is(input, select, textarea, button, a):focus-visible { outline: 3px solid #87bfae; outline-offset: 3px; }
+.setup-prefixed { display: flex; border: 1px solid #cddbd3; border-radius: 8px; }
+.setup-prefixed > span { display: grid; place-items: center; padding: 0 12px; border-right: 1px solid #dce5df; background: #f5f8f5; border-radius: 8px 0 0 8px; font-size: 13px; color: #597064; }
+.setup-prefixed input { border: none; border-radius: 0 8px 8px 0; min-width: 0; }
+.setup-logo-row { display: flex; align-items: center; gap: 18px; border: 1px dashed #cdded3; background: #fbfdfb; padding: 18px; border-radius: 10px; }
+.setup-logo-preview { width: 72px; height: 72px; flex: 0 0 72px; border-radius: 14px; background: #e5f0e9; display: grid; place-items: center; overflow: hidden; color: #448169; font-size: 30px; }
+.setup-logo-preview img { width: 100%; height: 100%; object-fit: contain; }
+.setup-logo-row input { padding: 6px; border: none; background: transparent; font-size: 12px; }
+.setup-text-button { border: 0; background: none; color: #276751; padding: 8px 0; cursor: pointer; text-decoration: underline; }
+.setup-prescription { border: 1px solid #dbe4dc; border-top: 3px solid #497f68; padding: 22px; text-align: center; overflow-wrap: anywhere; }
+.setup-prescription small { letter-spacing: .12em; font-size: 9px; color: #708276; }
+.setup-prescription h3 { margin: 18px 0 8px; font-size: 19px; }
+.setup-prescription p { font-size: 12px; line-height: 1.6; color: #637569; white-space: pre-wrap; }
+.setup-prescription-space { margin: 20px 0; padding: 35px 10px; border-block: 1px dashed #d9e3da; color: #728277; font-size: 12px; }
+.setup-actions { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 0; }
+.setup-actions strong { font-size: 13px; }
+.setup-actions p { font-size: 11px; color: #66796e; line-height: 1.6; }
+.setup-actions button { border: none; border-radius: 9px; padding: 14px 20px; background: #24694f; color: white; font: inherit; font-size: 13px; font-weight: 650; cursor: pointer; }
+.setup-actions button:hover { background: #195039; }
+.setup-actions button:disabled { opacity: .6; cursor: wait; }
+.setup-status { color: #226445; font-size: 13px; line-height: 1.6; }
+.setup-error { color: #9c2e2e; background: #fff0ed; border-radius: 7px; padding: 10px; font-size: 13px; line-height: 1.6; }
+@media (max-width: 900px) { .setup-layout { grid-template-columns: minmax(0, 1fr); gap: 12px; } .setup-sidebar { position: static; } .setup-sidebar nav { grid-template-columns: repeat(3, minmax(0, 1fr)); } .setup-sidebar > p { margin: 12px 0; padding-top: 12px; } }
+@media (max-width: 600px) { .clinic-setup { padding: 24px 16px; } .setup-page-heading { align-items: start; flex-direction: column; gap: 12px; margin-bottom: 24px; } .setup-grid { grid-template-columns: minmax(0, 1fr); } .setup-section { padding: 20px 16px; } .setup-sidebar nav { grid-template-columns: repeat(2, minmax(0, 1fr)); } .setup-sidebar a { font-size: 11px; padding: 10px 6px; gap: 7px; } .setup-actions { flex-direction: column; align-items: stretch; } .setup-logo-row { align-items: start; flex-direction: column; } }
