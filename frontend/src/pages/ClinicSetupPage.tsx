@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { ChangeEvent, FormEvent, ReactNode } from "react";
 import "./ClinicSetupPage.css";
 import axios from "axios";
-import { Navigate } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 
 const clinicUrl = `${import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080"}/api/admin/clinic`;
@@ -170,6 +170,7 @@ export default function ClinicSetupPage() {
 
   return <main className="clinic-setup">
     <div className="setup-shell">
+      <nav aria-label="Administration" style={{ marginBottom: 24 }}><Link to="/manage-doctors" onClick={event => { if (saving || (dirty && !window.confirm("Discard unsaved clinic changes?"))) event.preventDefault(); }}>Manage Doctors →</Link></nav>
       <header className="setup-page-heading"><div><p className="setup-eyebrow">CLINIC WORKSPACE</p><h1>Make it your clinic.</h1><p>Set up the details your team and patients will see.</p></div><span className="setup-badge">India · INR · IST</span></header>
       <div className="setup-layout">
         <aside className="setup-sidebar"><nav aria-label="Clinic setup sections">
