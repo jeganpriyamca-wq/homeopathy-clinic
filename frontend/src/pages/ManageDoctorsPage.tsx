@@ -124,7 +124,7 @@ export default function ManageDoctorsPage() {
   ] as const;
 
   return <main className="clinic-setup"><div className="setup-shell">
-    <nav className="doctor-nav" aria-label="Administration">
+    <nav className="clinic-admin-nav" aria-label="Administration">
       <Link to="/clinic-setup" onClick={event => { if (busy || (dirty && !window.confirm("Discard unsaved doctor changes?"))) event.preventDefault(); }}>Clinic Setup</Link>
       <span aria-current="page">Manage Doctors</span>
     </nav>
