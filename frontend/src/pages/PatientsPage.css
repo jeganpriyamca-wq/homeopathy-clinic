@@ -1,0 +1,34 @@
+.patient-primary, .patient-secondary { min-height: 44px; border: 1px solid #24694f; border-radius: 9px; padding: 11px 18px; font: inherit; font-size: 13px; font-weight: 650; cursor: pointer; }
+.patient-primary { background: #24694f; color: white; }
+.patient-secondary { background: white; color: #24694f; }
+.patient-primary:hover { background: #195039; }
+.patient-secondary:hover { background: #e9f4ef; }
+.patient-search { display: flex; gap: 12px; align-items: end; margin-bottom: 24px; }
+.patient-search .setup-field { flex: 1; }
+.patient-count { color: #617574; font-size: 13px; }
+.patient-results { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.patient-card { margin-bottom: 0; overflow-wrap: anywhere; }
+.patient-number { display: inline-block; color: #24694f; font-size: 12px; font-weight: 700; background: #e9f4ef; border-radius: 6px; padding: 6px 9px; margin-bottom: 16px; }
+.patient-card dl, .patient-details { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; margin-block: 22px; }
+.patient-card dt, .patient-details dt { color: #617574; font-size: 12px; margin-bottom: 8px; }
+.patient-card dd, .patient-details dd { margin: 0; font-size: 14px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.patient-profile-heading { display: flex; justify-content: space-between; align-items: center; gap: 20px; }
+.patient-profile-heading h2 { font-size: 24px; overflow-wrap: anywhere; }
+.patient-pagination { display: flex; align-items: center; justify-content: center; gap: 20px; margin-top: 28px; font-size: 13px; }
+.patient-fieldset { min-width: 0; border: 0; padding: 0; margin: 0; }
+.patient-fieldset h2 { margin-bottom: 18px; }
+.patient-duplicates { border: 1px solid #dec789; border-radius: 12px; padding: 24px; background: #fffbef; }
+.patient-duplicates h2 { font-size: 18px; }
+.patient-duplicates p { font-size: 13px; line-height: 1.7; }
+.patient-duplicates ul { padding: 0; list-style: none; }
+.patient-duplicates li { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 12px 0; border-bottom: 1px solid #e6ddbf; overflow-wrap: anywhere; }
+.patient-ack { display: flex; align-items: start; gap: 10px; font-size: 14px; line-height: 1.6; }
+.patient-ack input { width: 18px; height: 18px; flex-shrink: 0; accent-color: #24694f; }
+.patient-inactive { color: #67756e; font-size: 13px; }
+.patient-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.clinic-setup button:disabled { opacity: .6; cursor: wait; }
+@media (max-width: 600px) {
+  .patient-results, .patient-details { grid-template-columns: 1fr; }
+  .patient-search { flex-wrap: wrap; } .patient-search .setup-field { flex: 1 1 100%; }
+  .patient-profile-heading, .patient-duplicates li { align-items: start; flex-direction: column; }
+}
