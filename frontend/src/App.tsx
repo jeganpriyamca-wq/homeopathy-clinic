@@ -1,3 +1,4 @@
+import PatientsPage from "./pages/PatientsPage";
 import {
   Navigate,
   Route,
@@ -13,6 +14,7 @@ import ReceptionDashboard from "./pages/ReceptionDashboard";
 export default function App() {
   return (
     <Routes>
+      <Route path="/patients" element={<PatientsPage />} />
       <Route path="/manage-doctors" element={<ManageDoctorsPage />} />
       <Route
         path="/login"
