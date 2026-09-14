@@ -1,0 +1,18 @@
+.doctor-nav { display: flex; gap: 24px; margin-bottom: 28px; font-size: 14px; }
+.doctor-nav a { color: #24694f; }
+.doctor-primary, .doctor-card-actions button { border: 1px solid #24694f; border-radius: 9px; padding: 12px 18px; font: inherit; font-size: 13px; cursor: pointer; }
+.doctor-primary { background: #24694f; color: white; }
+.doctor-card-actions button { background: white; color: #24694f; }
+.doctor-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.doctor-card { margin: 0; overflow-wrap: anywhere; }
+.doctor-card p { color: #617574; font-size: 14px; line-height: 1.6; }
+.doctor-card-heading, .doctor-card-actions { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.doctor-card-actions { justify-content: start; flex-wrap: wrap; margin-top: 22px; }
+.doctor-inactive { background: #eef0ef; color: #5c6662; border-radius: 30px; padding: 10px 16px; font-size: 12px; }
+.doctor-fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+.doctor-fieldset h2 { margin-bottom: 18px; }
+.doctor-hours { display: grid; gap: 12px; }
+.doctor-day { display: grid; grid-template-columns: 1fr 80px 1fr 1fr; gap: 16px; align-items: center; padding-block: 12px; border-bottom: 1px solid #e4ebe7; font-size: 13px; }
+.doctor-day input[type="checkbox"] { width: 18px; height: 18px; vertical-align: middle; accent-color: #24694f; }
+.clinic-setup button:disabled { opacity: .6; cursor: wait; }
+@media (max-width: 700px) { .doctor-list { grid-template-columns: 1fr; } .doctor-day { grid-template-columns: 1fr 1fr; } }

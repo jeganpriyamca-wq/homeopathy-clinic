@@ -53,3 +53,11 @@
 .setup-error { color: #9c2e2e; background: #fff0ed; border-radius: 7px; padding: 10px; font-size: 13px; line-height: 1.6; }
 @media (max-width: 900px) { .setup-layout { grid-template-columns: minmax(0, 1fr); gap: 12px; } .setup-sidebar { position: static; } .setup-sidebar nav { grid-template-columns: repeat(3, minmax(0, 1fr)); } .setup-sidebar > p { margin: 12px 0; padding-top: 12px; } }
 @media (max-width: 600px) { .clinic-setup { padding: 24px 16px; } .setup-page-heading { align-items: start; flex-direction: column; gap: 12px; margin-bottom: 24px; } .setup-grid { grid-template-columns: minmax(0, 1fr); } .setup-section { padding: 20px 16px; } .setup-sidebar nav { grid-template-columns: repeat(2, minmax(0, 1fr)); } .setup-sidebar a { font-size: 11px; padding: 10px 6px; gap: 7px; } .setup-actions { flex-direction: column; align-items: stretch; } .setup-logo-row { align-items: start; flex-direction: column; } }
+
+/* Shared navigation for the two administration pages. */
+.clinic-admin-nav { display: inline-flex; flex-wrap: wrap; gap: 4px; max-width: 100%; margin-bottom: 28px; padding: 5px; border: 1px solid #d4e3dc; border-radius: 12px; background: #e9f1ed; }
+.clinic-admin-nav > a, .clinic-admin-nav > span { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 650; line-height: 1.4; text-decoration: none; color: #3e6255; transition: background-color .15s, color .15s; }
+.clinic-admin-nav > a:visited { color: #3e6255; }
+.clinic-admin-nav > a:hover { background: #dcebe3; color: #174f3b; }
+.clinic-admin-nav > [aria-current="page"] { background: #24694f; color: #fff; box-shadow: 0 2px 4px #173f2414; }
+@media (max-width: 600px) { .clinic-admin-nav { display: flex; } .clinic-admin-nav > a, .clinic-admin-nav > span { flex: 1; padding-inline: 12px; } }

@@ -1,0 +1,7 @@
+.clinic-topbar { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 28px; }
+.clinic-topbar .clinic-admin-nav { margin-bottom: 0; }
+.clinic-logout { flex-shrink: 0; min-height: 44px; padding: 11px 20px; border: 1px solid #bfd5c9; border-radius: 9px; background: white; color: #24694f; font: inherit; font-size: 13px; font-weight: 650; cursor: pointer; }
+.clinic-logout:hover { background: #e4efe8; border-color: #7da990; }
+.clinic-logout:focus-visible { outline: 3px solid #87bfae; outline-offset: 3px; }
+.clinic-logout:disabled { opacity: .6; cursor: wait; }
+@media (max-width: 600px) { .clinic-topbar { flex-wrap: wrap; } .clinic-topbar .clinic-admin-nav { flex: 1 1 100%; } .clinic-topbar > .clinic-logout { margin-left: auto; } }

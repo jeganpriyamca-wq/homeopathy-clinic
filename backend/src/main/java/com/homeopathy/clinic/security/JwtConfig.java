@@ -25,9 +25,12 @@ public class JwtConfig {
   }
 
   @Bean
-  JwtDecoder jwtDecoder(SecretKey k) {
-    return NimbusJwtDecoder.withSecretKey(k)
+  JwtDecoder jwtDecoder(SecretKey k, ActiveUserValidator activeUsers) {
+    NimbusJwtDecoder decoder = NimbusJwtDecoder.withSecretKey(k)
     .macAlgorithm(MacAlgorithm.HS256)
     .build();
+    decoder.setJwtValidator(new org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator<>(
+        JwtValidators.createDefaultWithIssuer("homeopathy-clinic"), activeUsers));
+    return decoder;
   }
 }
