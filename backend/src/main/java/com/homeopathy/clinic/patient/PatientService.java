@@ -4,6 +4,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.UUID;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.format.ResolverStyle;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -27,10 +31,12 @@ public class PatientService {
         String normalized = cleanName(query).toLowerCase(Locale.ROOT);
         // Treat SQL LIKE metacharacters as literal user input.
         String pattern = "%" + normalized.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%";
+        LocalDate birthDate = parseBirthDate(normalized);
         Specification<Patient> filter = (root, q, cb) -> normalized.isEmpty() ? cb.conjunction() :
             cb.or(cb.like(cb.lower(root.get("patientNumber")), pattern, '\\'),
                   cb.like(cb.lower(cb.concat(cb.concat(root.get("firstName"), " "), root.get("lastName"))), pattern, '\\'),
-                  cb.like(root.get("phone"), pattern, '\\'));
+                  cb.like(root.get("phone"), pattern, '\\'),
+                  birthDate == null ? cb.disjunction() : cb.equal(root.get("dateOfBirth"), birthDate));
         var result = patients.findAll(filter, PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id")));
         return new PatientSearchResponse(result.getContent().stream().map(PatientSummary::from).toList(),
             page, size, result.getTotalElements(), result.getTotalPages());
@@ -77,6 +83,18 @@ public class PatientService {
         List<PatientSummary> matches = patients.findAll(filter, PageRequest.of(0, 5, Sort.by("id")))
             .stream().map(PatientSummary::from).toList();
         if (!matches.isEmpty()) throw new PossibleDuplicateException(matches);
+    }
+
+    private LocalDate parseBirthDate(String query) {
+        for (String format : List.of("uuuu-MM-dd", "dd/MM/uuuu")) {
+            try {
+                return LocalDate.parse(query, DateTimeFormatter.ofPattern(format, Locale.ROOT)
+                    .withResolverStyle(ResolverStyle.STRICT));
+            } catch (DateTimeParseException ignored) {
+                // Ordinary text and invalid dates still use the existing text search.
+            }
+        }
+        return null;
     }
 
     private Patient find(Long id) {

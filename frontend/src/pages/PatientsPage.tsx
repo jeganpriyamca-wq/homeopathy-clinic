@@ -40,7 +40,15 @@ export default function PatientsPage() {
   const canAccess = user && ["ADMIN", "DOCTOR", "RECEPTIONIST"].includes(user.role);
 
   useEffect(() => {
+    if (query.trim() === search) return;
+    const timer = window.setTimeout(() => {
+      setSearch(query.trim()); setPage(0); setStatus("");
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [query, search]);
+  useEffect(() => {
     if (!token || !canAccess || mode !== "list") return;
+    if (query.trim() !== search) { setLoading(true); return; }
     const controller = new AbortController();
     setLoading(true);
     setLoadFailed(false);
@@ -51,7 +59,7 @@ export default function PatientsPage() {
       if (!controller.signal.aborted) { setError(patientError(error).message); setLoadFailed(true); }
     }).finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
-  }, [token, canAccess, mode, search, page, refresh]);
+  }, [token, canAccess, mode, query, search, page, refresh]);
 
   useEffect(() => {
     if (mode === "form") firstName.current?.focus();
@@ -102,9 +110,6 @@ export default function PatientsPage() {
       setError(problem.message); setMatches(problem.matches ?? []); setAcknowledged(false);
     } finally { inFlight.current = false; setBusy(false); }
   }
-  function submitSearch(event: FormEvent) {
-    event.preventDefault(); setSearch(query.trim()); setPage(0); setRefresh(value => value + 1); setStatus("");
-  }
 
   if (!user) return <Navigate to="/login" replace />;
   if (!canAccess) return <Navigate to="/login" replace />;
@@ -129,19 +134,18 @@ export default function PatientsPage() {
     {error && <p className="setup-error" role="alert">{error}</p>}
 
     {mode === "list" && <>
-      <form className="patient-search" onSubmit={submitSearch}>
+      <div className="patient-search" role="search" aria-label="Find patients">
         <div className="setup-field"><label htmlFor="patient-search">Search patients</label>
-          <input id="patient-search" type="search" placeholder="Patient ID, name or phone number" maxLength={100}
+          <input id="patient-search" type="search" placeholder="ID, name, phone or DOB (DD/MM/YYYY)" maxLength={100}
             value={query} onChange={event => setQuery(event.target.value)} /></div>
-        <button type="submit" className="patient-primary" disabled={busy}>Search</button>
         <button type="button" className="patient-secondary" disabled={busy} onClick={() => {
           setQuery(""); setSearch(""); setPage(0); setRefresh(value => value + 1);
         }}>Clear</button>
-      </form>
+      </div>
       {loading ? <p role="status">Loading patients...</p> : loadFailed ? <button className="patient-secondary" onClick={() => setRefresh(value => value + 1)}>Retry loading</button> : <>
         <p className="patient-count" role="status">{result.totalElements} {result.totalElements === 1 ? "patient" : "patients"}{search ? " found" : " registered"}</p>
         {result.items.length === 0 ? <section className="setup-section"><h2>{search ? "No matching patients" : "No patients yet"}</h2>
-          <p>{search ? "Try another name, patient ID or phone number." : "Register your first patient to get started."}</p></section> :
+          <p>{search ? "Try another name, patient ID, phone number or DOB (DD/MM/YYYY or YYYY-MM-DD)." : "Register your first patient to get started."}</p></section> :
           <div className="patient-results">{result.items.map(patient => <article className="setup-section patient-card" key={patient.id}>
             <span className="patient-number">{patient.patientNumber}</span><h2>{patient.firstName} {patient.lastName}</h2>
             {!patient.active && <p className="patient-inactive">Inactive record</p>}
