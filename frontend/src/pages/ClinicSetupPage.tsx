@@ -1,3 +1,4 @@
+import LogoutButton from "../components/LogoutButton";
 import { useEffect, useRef, useState } from "react";
 import type { ChangeEvent, FormEvent, ReactNode } from "react";
 import "./ClinicSetupPage.css";
@@ -170,7 +171,7 @@ export default function ClinicSetupPage() {
 
   return <main className="clinic-setup">
     <div className="setup-shell">
-      <nav className="clinic-admin-nav" aria-label="Administration"><span aria-current="page">Clinic Setup</span><Link to="/manage-doctors" onClick={event => { if (saving || (dirty && !window.confirm("Discard unsaved clinic changes?"))) event.preventDefault(); }}>Manage Doctors</Link></nav>
+      <div className="clinic-topbar"><nav className="clinic-admin-nav" aria-label="Administration"><span aria-current="page">Clinic Setup</span><Link to="/manage-doctors" onClick={event => { if (saving || (dirty && !window.confirm("Discard unsaved clinic changes?"))) event.preventDefault(); }}>Manage Doctors</Link></nav><LogoutButton disabled={saving || readingLogo} hasUnsavedChanges={dirty} /></div>
       <header className="setup-page-heading"><div><p className="setup-eyebrow">CLINIC WORKSPACE</p><h1>Make it your clinic.</h1><p>Set up the details your team and patients will see.</p></div><span className="setup-badge">India · INR · IST</span></header>
       <div className="setup-layout">
         <aside className="setup-sidebar"><nav aria-label="Clinic setup sections">

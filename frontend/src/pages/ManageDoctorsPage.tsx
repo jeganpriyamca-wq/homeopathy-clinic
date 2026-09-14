@@ -1,3 +1,4 @@
+import LogoutButton from "../components/LogoutButton";
 import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { Link, Navigate } from "react-router-dom";
@@ -124,10 +125,10 @@ export default function ManageDoctorsPage() {
   ] as const;
 
   return <main className="clinic-setup"><div className="setup-shell">
-    <nav className="clinic-admin-nav" aria-label="Administration">
+    <div className="clinic-topbar"><nav className="clinic-admin-nav" aria-label="Administration">
       <Link to="/clinic-setup" onClick={event => { if (busy || (dirty && !window.confirm("Discard unsaved doctor changes?"))) event.preventDefault(); }}>Clinic Setup</Link>
       <span aria-current="page">Manage Doctors</span>
-    </nav>
+    </nav><LogoutButton disabled={busy} hasUnsavedChanges={dirty} /></div>
     <header className="setup-page-heading"><div><p className="setup-eyebrow">CLINIC TEAM</p><h1>Manage Doctors</h1>
       <p>Give each doctor their own login, fees and working hours.</p></div>
       {!showForm && <button className="doctor-primary" onClick={() => open(null)} disabled={loading || loadFailed || busy}>Add doctor</button>}
