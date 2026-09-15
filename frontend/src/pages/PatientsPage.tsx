@@ -1,3 +1,4 @@
+import PatientAppointments from "../components/PatientAppointments";
 import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { Link, Navigate } from "react-router-dom";
@@ -173,6 +174,8 @@ export default function PatientsPage() {
         <div className="setup-wide"><dt>Address</dt><dd>{selected.details.address || "Not recorded"}</dd></div>
       </dl>
     </section>}
+
+    {mode === "view" && selected && token && <PatientAppointments key={selected.id} token={token} patientId={selected.id} doctor={user.role === "DOCTOR"} />}
 
     {mode === "form" && <form onSubmit={save} autoComplete="off">
       <fieldset disabled={busy} className="patient-fieldset">

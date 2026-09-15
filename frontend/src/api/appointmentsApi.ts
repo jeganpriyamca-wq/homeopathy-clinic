@@ -2,6 +2,9 @@ import axios from "axios";
 export type AppointmentStatus = "BOOKED" | "ARRIVED" | "COMPLETED" | "CANCELLED" | "NO_SHOW";
 export type Appointment = { id: number; version: number; doctorId: number; doctorName: string;
   patientId: number; patientNumber: string; patientName: string; date: string; time: string; endTime: string; status: AppointmentStatus };
+export async function patientAppointments(token: string, patientId: number, signal?: AbortSignal): Promise<Appointment[]> {
+  return (await axios.get(url + "/patient/" + patientId, {...config(token), signal})).data;
+}
 export type BookingDoctor = { id: number; name: string; active: boolean };
 const url = `${import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080"}/api/appointments`;
 const config = (token: string) => ({ headers: { Authorization: `Bearer ${token}` } });

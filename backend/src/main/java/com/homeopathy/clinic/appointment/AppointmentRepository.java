@@ -6,6 +6,9 @@ import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 
 public interface AppointmentRepository extends JpaRepository<Appointment, Long> {
+    @EntityGraph(attributePaths = {"doctor.user", "patient"})
+    @Query("select a from Appointment a where a.patient.id = :patient and (:userId is null or a.doctor.user.id = :userId) order by a.startsAt desc, a.id desc")
+    List<Appointment> forPatient(@Param("patient") Long patient, @Param("userId") Long userId);
     @Query("select a.doctor.id from Appointment a where a.id = :id")
     java.util.Optional<Long> doctorId(@Param("id") Long id);
     @EntityGraph(attributePaths = {"doctor.user", "patient"})

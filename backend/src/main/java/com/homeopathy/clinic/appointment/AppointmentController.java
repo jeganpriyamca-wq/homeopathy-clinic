@@ -15,6 +15,10 @@ import static com.homeopathy.clinic.appointment.AppointmentDtos.*;
 public class AppointmentController {
     private final AppointmentService service;
     public AppointmentController(AppointmentService service) { this.service = service; }
+    @GetMapping("/patient/{patientId}") public ResponseEntity<List<View>> patient(@AuthenticationPrincipal Jwt actor,
+        @PathVariable Long patientId) {
+        return reply(service.patient(actor, patientId));
+    }
     @GetMapping public ResponseEntity<List<View>> day(@AuthenticationPrincipal Jwt actor,
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
         @RequestParam(required = false) Long doctorId) {

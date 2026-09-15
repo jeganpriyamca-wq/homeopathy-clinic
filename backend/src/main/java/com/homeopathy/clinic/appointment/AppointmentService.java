@@ -33,6 +33,14 @@ public class AppointmentService {
             throw problem(HttpStatus.FORBIDDEN, "Doctors can access only their own appointments.");
     }
     @Transactional(readOnly = true)
+    public List<View> patient(Jwt actor, Long patientId) {
+        if (!manager(actor) && !"DOCTOR".equals(actor.getClaimAsString("role")))
+            throw problem(HttpStatus.FORBIDDEN, "Staff access required.");
+        if (!patients.existsById(patientId)) throw problem(HttpStatus.NOT_FOUND, "Patient not found.");
+        Long userId = manager(actor) ? null : ((Number) actor.getClaim("userId")).longValue();
+        return appointments.forPatient(patientId, userId).stream().map(View::from).toList();
+    }
+    @Transactional(readOnly = true)
     public List<DoctorOption> doctors(Jwt actor) {
         return doctors.findAllByOrderByIdAsc().stream()
             .filter(d -> manager(actor) || Objects.equals(d.getUser().getId(), ((Number) actor.getClaim("userId")).longValue()))

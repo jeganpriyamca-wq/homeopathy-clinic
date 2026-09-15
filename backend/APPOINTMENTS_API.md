@@ -72,3 +72,5 @@ Manual development check:
 7. Book a visit for today and log in as its doctor. Mark Arrived then Completed.
 8. Verify another doctor's appointments are absent and forbidden through the API.
 9. Check no-show after a visit ends; terminal statuses cannot be changed.
+
+Patient profile: GET /api/appointments/patient/{patientId} returns that patient's appointments (including history), newest first. Admins and receptionists see all doctors; doctors see only their own appointments. Missing patients return 404. Responses use Cache-Control: no-store. The profile displays No appointments scheduled for an empty result, with separate loading and retry states.

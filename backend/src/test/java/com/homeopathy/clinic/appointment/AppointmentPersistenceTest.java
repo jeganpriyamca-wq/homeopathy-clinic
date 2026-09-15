@@ -65,6 +65,21 @@ class AppointmentPersistenceTest {
     @AfterEach void cleanup() {
         appointments.deleteAllInBatch();doctors.deleteAllInBatch();patients.deleteAllInBatch();users.deleteAllInBatch();clinics.deleteAllInBatch();
     }
+    @Test void patientAppointmentsAreScopedSortedAndIncludeHistory() {
+        assertTrue(service.patient(admin, patientId).isEmpty());
+        var early = book(LocalTime.of(9, 0));
+        var later = service.create(admin, new Booking(otherDoctorId, patientId, date, LocalTime.of(10, 0)));
+        service.status(admin, early.id(), new StatusChange(early.version(), Appointment.Status.CANCELLED));
+        assertEquals(List.of(later.id(), early.id()), service.patient(admin, patientId).stream().map(View::id).toList());
+        assertEquals(2, service.patient(actor("RECEPTIONIST", 999L), patientId).size());
+        var own = service.patient(actor("DOCTOR", doctorUserId), patientId);
+        assertEquals(1, own.size());
+        assertEquals(Appointment.Status.CANCELLED, own.getFirst().status());
+        Patient other = new Patient(); other.setPatientNumber("PAT-OTHER"); other.setFirstName("Other"); other.setLastName("Patient"); other.setPhone("1000000002");
+        other = patients.saveAndFlush(other);
+        assertTrue(service.patient(admin, other.getId()).isEmpty());
+        assertThrows(ResponseStatusException.class, () -> service.patient(admin, Long.MAX_VALUE));
+    }
     View book(LocalTime time) { return service.create(admin,new Booking(doctorId,patientId,date,time)); }
     @Test void slotsRespectHoursPastDaysAndOverlaps() {
         assertEquals(4,service.slots(admin,doctorId,date,null).times().size());
