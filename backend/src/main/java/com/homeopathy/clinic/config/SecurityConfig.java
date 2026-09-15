@@ -39,6 +39,13 @@ public class SecurityConfig {
                     "/api/health"
                 ).permitAll()
 
+                .requestMatchers(HttpMethod.POST, "/api/appointments").hasAnyRole("ADMIN", "RECEPTIONIST")
+                .requestMatchers(HttpMethod.PUT, "/api/appointments/**").hasAnyRole("ADMIN", "RECEPTIONIST")
+                .requestMatchers("/api/appointments/slots").hasAnyRole("ADMIN", "RECEPTIONIST")
+                .requestMatchers("/api/appointments", "/api/appointments/**").hasAnyRole("ADMIN", "DOCTOR", "RECEPTIONIST")
+                .requestMatchers("/api/patients", "/api/patients/**")
+                .hasAnyRole("ADMIN", "DOCTOR", "RECEPTIONIST")
+
                 .requestMatchers("/api/admin/**")
                 .hasRole("ADMIN")
 
