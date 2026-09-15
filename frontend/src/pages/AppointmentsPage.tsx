@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { Link, Navigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import LogoutButton from "../components/LogoutButton";
-import { patientError, searchPatients } from "../api/patientsApi";
+import { getPatient, patientError, searchPatients } from "../api/patientsApi";
 import type { PatientSummary } from "../api/patientsApi";
 import { appointmentDoctors, appointmentSlots, bookAppointment, changeAppointmentStatus, clinicToday, dailyAppointments, moveAppointment } from "../api/appointmentsApi";
 import type { Appointment, AppointmentStatus, BookingDoctor } from "../api/appointmentsApi";
@@ -15,6 +15,8 @@ const label = (status: AppointmentStatus) => ({BOOKED:"Booked",ARRIVED:"Arrived"
 
 export default function AppointmentsPage({ dashboardTitle }: { dashboardTitle?: string }) {
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const registrationPatientId = searchParams.get("bookPatient");
   const token = user?.accessToken;
   const manager = user?.role === "ADMIN" || user?.role === "RECEPTIONIST";
   const [date,setDate] = useState(clinicToday);
@@ -86,6 +88,19 @@ export default function AppointmentsPage({ dashboardTitle }: { dashboardTitle?: 
     return () => window.removeEventListener("beforeunload",warn);
   },[open]);
 
+  useEffect(() => {
+    if (!token || !manager || !registrationPatientId) return;
+    const controller = new AbortController();
+    getPatient(token, Number(registrationPatientId), controller.signal).then(saved => {
+      if (controller.signal.aborted) return;
+      if (!saved.active) { setActionError("This patient is inactive."); return; }
+      setPatient({ id: saved.id, patientNumber: saved.patientNumber, active: saved.active, ...saved.details });
+      setEditing(null); setQuery(""); setDoctorId(""); setBookingDate(clinicToday()); setOpen(true);
+      setMessage("Patient registered successfully. Choose a doctor and time to book the appointment.");
+      setSearchParams({}, { replace: true });
+    }).catch(e => { if (!controller.signal.aborted) setActionError(patientError(e).message); });
+    return () => controller.abort();
+  }, [token, manager, registrationPatientId, setSearchParams]);
   function mayLeave() {return !busy && (!open || window.confirm("Discard this appointment form?"));}
   function begin(a: Appointment|null) {
     if (!mayLeave()) return;

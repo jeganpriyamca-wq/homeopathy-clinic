@@ -13,8 +13,8 @@ const config = (token: string) => ({ headers: { Authorization: `Bearer ${token}`
 export async function searchPatients(token: string, q: string, page: number, signal?: AbortSignal): Promise<PatientPage> {
   return (await axios.get<PatientPage>(url, { ...config(token), params: { q, page, size: 20 }, signal })).data;
 }
-export async function getPatient(token: string, id: number): Promise<Patient> {
-  return (await axios.get<Patient>(`${url}/${id}`, config(token))).data;
+export async function getPatient(token: string, id: number, signal?: AbortSignal): Promise<Patient> {
+  return (await axios.get<Patient>(`${url}/${id}`, { ...config(token), signal })).data;
 }
 export async function savePatient(token: string, patient: Patient | null, details: PatientDetails, duplicateAcknowledged: boolean): Promise<Patient> {
   const body = { details, duplicateAcknowledged };

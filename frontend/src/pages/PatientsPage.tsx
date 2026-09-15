@@ -1,7 +1,7 @@
 import PatientAppointments from "../components/PatientAppointments";
 import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import LogoutButton from "../components/LogoutButton";
 import { getPatient, patientError, savePatient, searchPatients } from "../api/patientsApi";
@@ -18,6 +18,8 @@ const todayInIndia = () => {
 
 export default function PatientsPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const [bookAfterRegistration, setBookAfterRegistration] = useState(false);
   const [mode, setMode] = useState<"list" | "view" | "form">("list");
   const [query, setQuery] = useState("");
   const [search, setSearch] = useState("");
@@ -80,6 +82,7 @@ export default function PatientsPage() {
   }
   function openForm(patient: Patient | null) {
     if (!mayLeave()) return;
+    setBookAfterRegistration(false);
     setSelected(patient); setValues(patient ? { ...patient.details } : blank());
     setMatches([]); setAcknowledged(false); setError(""); setStatus(""); setDirty(false); setMode("form");
   }
@@ -106,6 +109,7 @@ export default function PatientsPage() {
       const saved = await savePatient(token, selected, details, acknowledged);
       setSelected(saved); setMode("view"); setDirty(false); setMatches([]);
       setStatus(selected ? "Patient details updated." : "Patient registered successfully.");
+      if (!selected && bookAfterRegistration && (user?.role === "ADMIN" || user?.role === "RECEPTIONIST")) navigate(`/appointments?bookPatient=${saved.id}`);
     } catch (error) {
       const problem = patientError(error);
       setError(problem.message); setMatches(problem.matches ?? []); setAcknowledged(false);
@@ -197,11 +201,12 @@ export default function PatientsPage() {
             <button type="button" className="patient-secondary" onClick={() => void view(patient.id)}>View record<span className="patient-sr-only"> {patient.patientNumber}</span></button></li>)}</ul>
           <label className="patient-ack"><input type="checkbox" checked={acknowledged} onChange={event => setAcknowledged(event.target.checked)} /> I reviewed the matches and this is a separate patient.</label>
         </section>}
+        {!selected && (user.role === "ADMIN" || user.role === "RECEPTIONIST") && <label className="patient-ack"><input type="checkbox" checked={bookAfterRegistration} onChange={event => setBookAfterRegistration(event.target.checked)} /> Book an appointment after registration</label>}
         <footer className="setup-actions"><button type="button" onClick={() => {
           if (!mayLeave()) return;
           setDirty(false); setMatches([]); setError(""); setMode(selected ? "view" : "list");
         }}>Cancel</button><button type="submit" disabled={matches.length > 0 && !acknowledged}>
-          {busy ? "Saving..." : selected ? "Save changes" : "Register patient"}</button></footer>
+          {busy ? "Saving..." : selected ? "Save changes" : bookAfterRegistration ? "Register and book appointment" : "Register patient"}</button></footer>
       </fieldset>
     </form>}
   </div></main>;
