@@ -1,7 +1,9 @@
+import { appointmentDoctors, appointmentSlots, bookAppointment, clinicToday } from "../api/appointmentsApi";
+import type { BookingDoctor } from "../api/appointmentsApi";
 import PatientAppointments from "../components/PatientAppointments";
 import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
-import { Link, Navigate, useNavigate } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import LogoutButton from "../components/LogoutButton";
 import { getPatient, patientError, savePatient, searchPatients } from "../api/patientsApi";
@@ -18,8 +20,16 @@ const todayInIndia = () => {
 
 export default function PatientsPage() {
   const { user } = useAuth();
-  const navigate = useNavigate();
+  const [registrationBooking, setRegistrationBooking] = useState(false);
   const [bookAfterRegistration, setBookAfterRegistration] = useState(false);
+  const [bookingDoctors, setBookingDoctors] = useState<BookingDoctor[]>([]);
+  const [bookingDoctor, setBookingDoctor] = useState("");
+  const [bookingDate, setBookingDate] = useState(clinicToday);
+  const [bookingTime, setBookingTime] = useState("");
+  const [bookingSlots, setBookingSlots] = useState<string[]>([]);
+  const [bookingLoading, setBookingLoading] = useState(false);
+  const [bookingError, setBookingError] = useState("");
+  const [bookingRefresh, setBookingRefresh] = useState(0);
   const [mode, setMode] = useState<"list" | "view" | "form">("list");
   const [query, setQuery] = useState("");
   const [search, setSearch] = useState("");
@@ -75,6 +85,24 @@ export default function PatientsPage() {
     return () => window.removeEventListener("beforeunload", warn);
   }, [dirty]);
 
+  useEffect(() => {
+    if (!token || mode !== "form" || !registrationBooking) return;
+    const controller = new AbortController();
+    appointmentDoctors(token, controller.signal).then(rows => {
+      if (!controller.signal.aborted) setBookingDoctors(rows.filter(row => row.active));
+    }).catch(() => { if (!controller.signal.aborted) setBookingError("Unable to load doctors. Please retry."); });
+    return () => controller.abort();
+  }, [token, mode, registrationBooking, bookingRefresh]);
+  useEffect(() => {
+    setBookingTime(""); setBookingSlots([]); setBookingError("");
+    if (!token || !bookAfterRegistration || !bookingDoctor || !bookingDate || mode !== "form") { setBookingLoading(false); return; }
+    const controller = new AbortController(); setBookingLoading(true);
+    appointmentSlots(token, Number(bookingDoctor), bookingDate, undefined, controller.signal)
+      .then(rows => { if (!controller.signal.aborted) setBookingSlots(rows); })
+      .catch(() => { if (!controller.signal.aborted) setBookingError("Unable to load available times. Please retry."); })
+      .finally(() => { if (!controller.signal.aborted) setBookingLoading(false); });
+    return () => controller.abort();
+  }, [token, bookAfterRegistration, bookingDoctor, bookingDate, bookingRefresh, mode]);
   function mayLeave() { return !busy && (!dirty || window.confirm("Discard unsaved patient changes?")); }
   function showList() {
     if (!mayLeave()) return;
@@ -82,7 +110,8 @@ export default function PatientsPage() {
   }
   function openForm(patient: Patient | null) {
     if (!mayLeave()) return;
-    setBookAfterRegistration(false);
+    setBookAfterRegistration(false); setRegistrationBooking(!patient && (user?.role === "ADMIN" || user?.role === "RECEPTIONIST"));
+    setBookingDoctor(""); setBookingDate(clinicToday()); setBookingTime(""); setBookingDoctors([]);
     setSelected(patient); setValues(patient ? { ...patient.details } : blank());
     setMatches([]); setAcknowledged(false); setError(""); setStatus(""); setDirty(false); setMode("form");
   }
@@ -102,14 +131,24 @@ export default function PatientsPage() {
   async function save(event: FormEvent) {
     event.preventDefault();
     if (!token || inFlight.current || (matches.length > 0 && !acknowledged)) return;
+    if (bookAfterRegistration && (!bookingDoctor || !bookingTime || bookingLoading)) return;
     inFlight.current = true; setBusy(true); setError("");
     try {
       const details = { ...values, firstName: values.firstName.trim(), lastName: values.lastName.trim(),
         phone: values.phone.trim(), email: values.email.trim(), address: values.address.trim() };
       const saved = await savePatient(token, selected, details, acknowledged);
-      setSelected(saved); setMode("view"); setDirty(false); setMatches([]);
-      setStatus(selected ? "Patient details updated." : "Patient registered successfully.");
-      if (!selected && bookAfterRegistration && (user?.role === "ADMIN" || user?.role === "RECEPTIONIST")) navigate(`/appointments?bookPatient=${saved.id}`);
+      setSelected(saved); setDirty(false); setMatches([]);
+      if (bookAfterRegistration && registrationBooking) {
+        try {
+          await bookAppointment(token, Number(bookingDoctor), saved.id, bookingDate, bookingTime);
+        } catch (bookingFailure) {
+          setStatus("Patient saved. Appointment was not booked. Choose an available time and try again.");
+          setError(patientError(bookingFailure).message); setBookingRefresh(value => value + 1);
+          return;
+        }
+      }
+      setMode("view");
+      setStatus(bookAfterRegistration ? "Patient saved and appointment booked." : selected ? "Patient details updated." : "Patient registered successfully.");
     } catch (error) {
       const problem = patientError(error);
       setError(problem.message); setMatches(problem.matches ?? []); setAcknowledged(false);
@@ -201,12 +240,26 @@ export default function PatientsPage() {
             <button type="button" className="patient-secondary" onClick={() => void view(patient.id)}>View record<span className="patient-sr-only"> {patient.patientNumber}</span></button></li>)}</ul>
           <label className="patient-ack"><input type="checkbox" checked={acknowledged} onChange={event => setAcknowledged(event.target.checked)} /> I reviewed the matches and this is a separate patient.</label>
         </section>}
-        {!selected && (user.role === "ADMIN" || user.role === "RECEPTIONIST") && <label className="patient-ack"><input type="checkbox" checked={bookAfterRegistration} onChange={event => setBookAfterRegistration(event.target.checked)} /> Book an appointment after registration</label>}
+        {registrationBooking && <section className="setup-section">
+          <h2>Appointment (optional)</h2>
+          <label className="patient-ack"><input type="checkbox" checked={bookAfterRegistration} onChange={event => { setBookAfterRegistration(event.target.checked); setDirty(true); }} /> Book an appointment</label>
+          {bookAfterRegistration && <>
+            <p>Select a doctor, date and available time. All times are in Asia/Kolkata (IST).</p>
+            <div className="setup-grid">
+              <div className="setup-field"><label htmlFor="registration-doctor">Doctor *</label><select id="registration-doctor" required value={bookingDoctor} onChange={event => { setBookingDoctor(event.target.value); setDirty(true); }}><option value="">Select doctor</option>{bookingDoctors.map(doctor => <option key={doctor.id} value={doctor.id}>{doctor.name}</option>)}</select></div>
+              <div className="setup-field"><label htmlFor="registration-date">Appointment date *</label><input id="registration-date" type="date" required min={clinicToday()} value={bookingDate} onChange={event => { setBookingDate(event.target.value); setDirty(true); }} /></div>
+              <div className="setup-field"><label htmlFor="registration-time">Available time *</label><select id="registration-time" required disabled={bookingLoading || !bookingDoctor} value={bookingTime} onChange={event => { setBookingTime(event.target.value); setDirty(true); }}><option value="">Select time</option>{bookingSlots.map(time => <option key={time} value={time}>{time.slice(0, 5)}</option>)}</select></div>
+            </div>
+            {bookingLoading && <p role="status">Loading available times...</p>}
+            {bookingError ? <p role="alert">{bookingError}</p> : bookingDoctor && !bookingLoading && bookingSlots.length === 0 && <p>No available times. Choose another date or doctor.</p>}
+            <button type="button" className="patient-secondary" onClick={() => setBookingRefresh(value => value + 1)}>Refresh availability</button>
+          </>}
+        </section>}
         <footer className="setup-actions"><button type="button" onClick={() => {
           if (!mayLeave()) return;
           setDirty(false); setMatches([]); setError(""); setMode(selected ? "view" : "list");
-        }}>Cancel</button><button type="submit" disabled={matches.length > 0 && !acknowledged}>
-          {busy ? "Saving..." : selected ? "Save changes" : bookAfterRegistration ? "Register and book appointment" : "Register patient"}</button></footer>
+        }}>Cancel</button><button type="submit" disabled={(matches.length > 0 && !acknowledged) || (bookAfterRegistration && (bookingLoading || !bookingTime))}>
+          {busy ? "Saving..." : bookAfterRegistration ? selected ? "Save and book appointment" : "Register and book appointment" : selected ? "Save changes" : "Register patient"}</button></footer>
       </fieldset>
     </form>}
   </div></main>;
