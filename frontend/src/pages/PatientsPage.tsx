@@ -165,8 +165,8 @@ export default function PatientsPage() {
           <Link to="/clinic-setup" onClick={event => { if (!mayLeave()) event.preventDefault(); }}>Clinic Setup</Link>
           <Link to="/manage-doctors" onClick={event => { if (!mayLeave()) event.preventDefault(); }}>Manage Doctors</Link>
         </> : <Link to={user.role === "DOCTOR" ? "/doctor" : "/reception"} onClick={event => { if (!mayLeave()) event.preventDefault(); }}>Dashboard</Link>}
-        <Link to="/appointments" onClick={event => { if (!mayLeave()) event.preventDefault(); }}>Appointments</Link>
         <span aria-current="page">Patients</span>
+        <Link to="/appointments" onClick={event => { if (!mayLeave()) event.preventDefault(); }}>Appointments</Link>
       </nav>
       <LogoutButton disabled={busy} hasUnsavedChanges={dirty} />
     </header>
