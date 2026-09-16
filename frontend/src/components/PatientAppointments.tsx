@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { patientAppointments } from "../api/appointmentsApi";
+import { appointmentStatusLabel, patientAppointments } from "../api/appointmentsApi";
 import type { Appointment } from "../api/appointmentsApi";
 
 export default function PatientAppointments({ token, patientId, doctor }: { token: string; patientId: number; doctor: boolean }) {
@@ -26,7 +26,8 @@ export default function PatientAppointments({ token, patientId, doctor }: { toke
       {items.map(item => <article className="patient-card" key={item.id}>
         <h3>{item.date.split("-").reverse().join("/")} · {item.time.slice(0, 5)}–{item.endTime.slice(0, 5)}</h3>
         <p>Doctor: {item.doctorName}</p>
-        <p>Status: {item.status.toLowerCase().replaceAll("_", " ")}</p>
+        <p>Status: {appointmentStatusLabel(item.status)}</p>
+        {item.followUpForId && <p>Follow-up visit</p>}
       </article>)}
     </div>}
   </section>;

@@ -1,3 +1,4 @@
+import AppointmentActions from "../components/AppointmentActions";
 import AppointmentSlotPicker from "../components/AppointmentSlotPicker";
 import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
@@ -6,13 +7,14 @@ import { useAuth } from "../auth/AuthContext";
 import LogoutButton from "../components/LogoutButton";
 import { patientError, searchPatients } from "../api/patientsApi";
 import type { PatientSummary } from "../api/patientsApi";
-import { appointmentDoctors, appointmentSlots, bookAppointment, changeAppointmentStatus, clinicToday, dailyAppointments, moveAppointment } from "../api/appointmentsApi";
+import { appointmentDoctors, appointmentSlots, appointmentStatusLabel as label, bookAppointment, changeAppointmentStatus, clinicToday, dailyAppointments, moveAppointment } from "../api/appointmentsApi";
 import type { Appointment, AppointmentSlot, AppointmentStatus, BookingDoctor } from "../api/appointmentsApi";
 import "./ClinicSetupPage.css";
 import "./PatientsPage.css";
 import "./AppointmentsPage.css";
 
-const label = (status: AppointmentStatus) => ({BOOKED:"Booked",ARRIVED:"Arrived",COMPLETED:"Completed",CANCELLED:"Cancelled",NO_SHOW:"No-show"}[status]);
+const visitStages: AppointmentStatus[] = ["BOOKED", "ARRIVED", "IN_CONSULTATION", "COMPLETED"];
+const visitTime = (value: string) => new Intl.DateTimeFormat("en-IN", {timeZone:"Asia/Kolkata",hour:"2-digit",minute:"2-digit"}).format(new Date(value));
 
 export default function AppointmentsPage({ dashboardTitle }: { dashboardTitle?: string }) {
   const { user } = useAuth();
@@ -29,6 +31,8 @@ export default function AppointmentsPage({ dashboardTitle }: { dashboardTitle?: 
   const [refresh,setRefresh] = useState(0);
   const [open,setOpen] = useState(false);
   const [editing,setEditing] = useState<Appointment|null>(null);
+  const [followUp,setFollowUp] = useState<Appointment|null>(null);
+  const [stage,setStage] = useState<AppointmentStatus|"">("");
   const [doctorId,setDoctorId] = useState("");
   const [bookingDate,setBookingDate] = useState(clinicToday);
   const [time,setTime] = useState("");
@@ -43,6 +47,13 @@ export default function AppointmentsPage({ dashboardTitle }: { dashboardTitle?: 
   const [formError,setFormError] = useState("");
   const [busy,setBusy] = useState(false);
   const inFlight = useRef(false);
+  const formHeading = useRef<HTMLHeadingElement>(null);
+  const dashboardPath = user?.role === "DOCTOR" ? "/doctor" : user?.role === "RECEPTIONIST" ? "/reception" : "/dashboard";
+  const visibleItems = stage ? items.filter(item=>item.status===stage) : items;
+
+  useEffect(() => {
+    if (open) { formHeading.current?.scrollIntoView({block:"start"}); formHeading.current?.focus(); }
+  }, [open, editing, followUp]);
 
   useEffect(() => {
     if (!token || !date) return;
@@ -69,7 +80,7 @@ export default function AppointmentsPage({ dashboardTitle }: { dashboardTitle?: 
 
   useEffect(() => {
     setMatches([]);setPatientSearchError("");
-    if (!token || !open || editing || query.trim().length < 2 || patient) {setPatientLoading(false);return;}
+    if (!token || !open || editing || followUp || query.trim().length < 2 || patient) {setPatientLoading(false);return;}
     const controller = new AbortController();setPatientLoading(true);
     const timer = window.setTimeout(() => {
       searchPatients(token,query.trim(),0,controller.signal)
@@ -78,7 +89,7 @@ export default function AppointmentsPage({ dashboardTitle }: { dashboardTitle?: 
         .finally(() => {if (!controller.signal.aborted) setPatientLoading(false);});
     },300);
     return () => {window.clearTimeout(timer);controller.abort();};
-  },[token,query,open,editing,patient]);
+  },[token,query,open,editing,followUp,patient]);
 
   useEffect(() => {
     if (!open) return;
@@ -90,19 +101,25 @@ export default function AppointmentsPage({ dashboardTitle }: { dashboardTitle?: 
   function mayLeave() {return !busy && (!open || window.confirm("Discard this appointment form?"));}
   function begin(a: Appointment|null) {
     if (!mayLeave()) return;
+    setFollowUp(null);setTime("");setSlots([]);
     setEditing(a);setDoctorId(String(a?.doctorId ?? (filter || doctors.find(d=>d.active)?.id || "")));
     setBookingDate(a?.date ?? (date < clinicToday() ? clinicToday() : date));
-    setPatient(null);setQuery("");setFormError("");setMessage("");setOpen(true);
+    setPatient(null);setQuery("");setFormError("");setMessage("");setOpen(true);setRefresh(n=>n+1);
+  }
+  function beginFollowUp(a: Appointment) {
+    if (!mayLeave()) return;
+    setEditing(null);setFollowUp(a);setDoctorId(String(a.doctorId));setBookingDate("");
+    setTime("");setSlots([]);setPatient(null);setQuery("");setFormError("");setMessage("");setOpen(true);
   }
   async function save(e: FormEvent) {
     e.preventDefault();
-    if (!token || inFlight.current || slotLoading || slotError || !slots.some(slot => slot.time === time && slot.available) || !doctorId || (!editing && !patient)) return;
+    if (!token || inFlight.current || slotLoading || slotError || !slots.some(slot => slot.time === time && slot.available) || !doctorId || (!editing && !patient && !followUp)) return;
     inFlight.current=true;setBusy(true);setFormError("");
     try {
       const saved = editing ? await moveAppointment(token,editing,bookingDate,time)
-        : await bookAppointment(token,Number(doctorId),patient!.id,bookingDate,time);
+        : await bookAppointment(token,Number(doctorId),followUp?.patientId ?? patient!.id,bookingDate,time,followUp?.id);
       setOpen(false);setDate(saved.date);setFilter(String(saved.doctorId));setRefresh(n=>n+1);
-      setMessage(editing ? "Appointment rescheduled." : "Appointment booked.");
+      setStage("");setMessage(editing ? "Appointment rescheduled." : followUp ? "Follow-up appointment booked." : "Appointment booked.");
     } catch(e) {setFormError(patientError(e).message);setRefresh(n=>n+1);}
     finally {inFlight.current=false;setBusy(false);}
   }
@@ -119,13 +136,14 @@ export default function AppointmentsPage({ dashboardTitle }: { dashboardTitle?: 
 
   return <main className="clinic-setup"><div className="setup-shell">
     <header className="clinic-topbar"><nav className="clinic-admin-nav" aria-label="Clinic navigation">
+      {dashboardTitle ? <span aria-current="page">Dashboard</span> : <Link to={dashboardPath} onClick={e=>{if(!mayLeave())e.preventDefault();}}>Dashboard</Link>}
       {user.role === "ADMIN" && <><Link to="/clinic-setup" onClick={e=>{if(!mayLeave())e.preventDefault();}}>Clinic Setup</Link>
         <Link to="/manage-doctors" onClick={e=>{if(!mayLeave())e.preventDefault();}}>Manage Doctors</Link></>}
       <Link to="/patients" onClick={e=>{if(!mayLeave())e.preventDefault();}}>Patients</Link>
-      <span aria-current="page">Appointments</span>
+      {dashboardTitle ? <Link to="/appointments" onClick={e=>{if(!mayLeave())e.preventDefault();}}>Appointments</Link> : <span aria-current="page">Appointments</span>}
     </nav><LogoutButton disabled={busy} hasUnsavedChanges={open}/></header>
     <header className="setup-page-heading"><div><p className="setup-eyebrow">DAILY SCHEDULE</p>
-      <h1>{dashboardTitle ?? "Appointments"}</h1><p>Appointments and availability. All times use Asia/Kolkata (IST).</p></div>
+      <h1>{dashboardTitle ?? "Appointments"}</h1><p>Check-in → Waiting → Consultation → Check-out → Follow-up. All times use IST.</p></div>
       {manager && <button className="patient-primary" disabled={busy || loading || !doctors.some(d=>d.active)} onClick={()=>begin(null)}>Book appointment</button>}
     </header>
     <p role="status" className="setup-status">{message}</p>
@@ -137,15 +155,23 @@ export default function AppointmentsPage({ dashboardTitle }: { dashboardTitle?: 
       <button className="patient-secondary" disabled={busy} onClick={()=>setRefresh(n=>n+1)}>Refresh schedule</button>
     </div>
 
+    {!loading && !error && <section className="visit-summary" aria-label="Visit progress for the selected date and doctor">
+      <button type="button" aria-pressed={stage===""} disabled={busy} onClick={()=>setStage("")}><strong>{items.length}</strong><span>All visits</span></button>
+      {visitStages.map(value=><button type="button" key={value} className={"visit-stage-"+value.toLowerCase()} aria-pressed={stage===value} disabled={busy} onClick={()=>setStage(value)}>
+        <strong>{items.filter(item=>item.status===value).length}</strong><span>{label(value)}</span>
+      </button>)}
+    </section>}
+
     {open && manager && <form className="setup-section appointment-form" onSubmit={save}>
-      <h2>{editing ? "Reschedule appointment" : "Book appointment"}</h2>
+      <h2 ref={formHeading} tabIndex={-1}>{editing ? "Reschedule appointment" : followUp ? "Book follow-up appointment" : "Book appointment"}</h2>
       {editing && <p>{editing.patientName} · {editing.patientNumber}. Rescheduling keeps the same doctor.</p>}
+      {followUp && <p>{followUp.patientName} · {followUp.patientNumber} · {followUp.doctorName}. Follow-up for the visit on {followUp.date}. Choose the next appointment date and time.</p>}
       {formError && <p role="alert" className="setup-error">{formError}</p>}
       <fieldset disabled={busy} className="patient-fieldset"><div className="setup-grid">
-        <div className="setup-field"><label htmlFor="booking-doctor">Doctor *</label><select id="booking-doctor" required value={doctorId} disabled={!!editing} onChange={e=>setDoctorId(e.target.value)}>
-          <option value="">Select doctor</option>{doctors.filter(d=>d.active || d.id===editing?.doctorId).map(d=><option key={d.id} value={d.id}>{d.name}{d.active?"":" (inactive)"}</option>)}</select></div>
+        <div className="setup-field"><label htmlFor="booking-doctor">Doctor *</label><select id="booking-doctor" required value={doctorId} disabled={!!editing || !!followUp} onChange={e=>setDoctorId(e.target.value)}>
+          <option value="">Select doctor</option>{doctors.filter(d=>d.active || d.id===editing?.doctorId || d.id===followUp?.doctorId).map(d=><option key={d.id} value={d.id}>{d.name}{d.active?"":" (inactive)"}</option>)}</select></div>
         <div className="setup-field"><label htmlFor="booking-date">Appointment date *</label><input id="booking-date" type="date" required min={clinicToday()} value={bookingDate} onChange={e=>setBookingDate(e.target.value)}/></div>
-        {!editing && <div className="setup-field setup-wide"><label htmlFor="booking-patient">Find patient *</label>
+        {!editing && !followUp && <div className="setup-field setup-wide"><label htmlFor="booking-patient">Find patient *</label>
           <input id="booking-patient" type="search" value={query} maxLength={100} placeholder="Name, patient ID, phone or DOB" onChange={e=>{setQuery(e.target.value);setPatient(null);}}/>
           {patient ? <p role="status">Selected: {patient.firstName} {patient.lastName} · {patient.patientNumber}</p> :
             <small>Type at least two characters. Up to 20 results; refine your search if needed.</small>}
@@ -158,24 +184,22 @@ export default function AppointmentsPage({ dashboardTitle }: { dashboardTitle?: 
         <AppointmentSlotPicker slots={slots} time={time} loading={slotLoading} error={slotError}
           ready={!!doctorId && !!bookingDate} onChange={setTime} />
       </div><footer className="setup-actions"><button type="button" onClick={()=>{if(mayLeave())setOpen(false);}}>Cancel</button>
-        <button type="submit" disabled={!time || slotLoading || !!slotError || (!editing&&!patient)}>{busy?"Saving...":editing?"Save new time":"Confirm booking"}</button></footer></fieldset>
+        <button type="submit" disabled={!time || slotLoading || !!slotError || (!editing&&!patient&&!followUp)}>{busy?"Saving...":editing?"Save new time":followUp?"Confirm follow-up":"Confirm booking"}</button></footer></fieldset>
     </form>}
 
     {actionError && <p className="setup-error" role="alert">{actionError}</p>}
     {error && <p className="setup-error" role="alert">{error}</p>}
     {loading ? <p role="status">Loading schedule...</p> : !error && <section aria-label="Daily appointments">
-      <p className="patient-count" role="status">{items.length} appointments on {date}</p>
-      {!items.length ? <div className="setup-section"><h2>No appointments for this date</h2><p>{manager?"Book an appointment or choose another date.":"Your appointments will appear here when booked."}</p></div> :
-      <div className="appointment-list">{items.map(a=><article key={a.id} className="setup-section appointment-card">
+      <p className="patient-count" role="status">{visibleItems.length} appointments on {date}{stage ? " · "+label(stage) : ""}</p>
+      {!visibleItems.length ? <div className="setup-section"><h2>{stage ? "No patients at this stage" : "No appointments for this date"}</h2><p>{stage ? "Choose another stage or All visits to see the full schedule." : manager?"Book an appointment or choose another date.":"Your appointments will appear here when booked."}</p></div> :
+      <div className="appointment-list">{visibleItems.map(a=><article key={a.id} className="setup-section appointment-card">
         <div className="appointment-time">{a.time.slice(0,5)}–{a.endTime.slice(0,5)} <small>IST</small></div>
-        <div><h2>{a.patientName}</h2><p>{a.patientNumber} · {a.doctorName}</p><span className={"appointment-status status-"+a.status.toLowerCase()}>{label(a.status)}</span></div>
-        <div className="appointment-actions">
-          {manager && a.status==="BOOKED" && <button className="patient-secondary" disabled={busy} onClick={()=>begin(a)}>Reschedule</button>}
-          {a.status==="BOOKED" && a.date<=clinicToday() && <button className="patient-secondary" disabled={busy} onClick={()=>void update(a,"ARRIVED")}>Mark arrived</button>}
-          {a.status==="ARRIVED" && <button className="patient-primary" disabled={busy} onClick={()=>void update(a,"COMPLETED")}>Complete</button>}
-          {a.status==="BOOKED" && new Date(a.date+"T"+a.endTime+"+05:30").getTime()<=Date.now() && <button className="patient-secondary" disabled={busy} onClick={()=>void update(a,"NO_SHOW")}>No-show</button>}
-          {manager && ["BOOKED","ARRIVED"].includes(a.status) && <button className="patient-secondary" disabled={busy} onClick={()=>void update(a,"CANCELLED")}>Cancel appointment</button>}
+        <div><h2>{a.patientName}</h2><p>{a.patientNumber} · {a.doctorName}</p><span className={"appointment-status status-"+a.status.toLowerCase()}>{label(a.status)}</span>
+          {a.followUpForId && <p className="visit-note">Follow-up visit</p>}
+          <div className="visit-timestamps">{a.checkedInAt && <span>Checked in {visitTime(a.checkedInAt)}</span>}{a.consultationStartedAt && <span>Consultation {visitTime(a.consultationStartedAt)}</span>}{a.checkedOutAt && <span>Checked out {visitTime(a.checkedOutAt)}</span>}</div>
         </div>
+        <AppointmentActions appointment={a} manager={manager} busy={busy} today={clinicToday()}
+          onReschedule={begin} onFollowUp={beginFollowUp} onStatus={(appointment,status)=>void update(appointment,status)} />
       </article>)}</div>}
     </section>}
   </div></main>;

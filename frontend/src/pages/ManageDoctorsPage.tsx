@@ -126,6 +126,7 @@ export default function ManageDoctorsPage() {
 
   return <main className="clinic-setup"><div className="setup-shell">
     <div className="clinic-topbar"><nav className="clinic-admin-nav" aria-label="Administration">
+      <Link to="/dashboard" onClick={event => { if (busy || (dirty && !window.confirm("Discard unsaved doctor changes?"))) event.preventDefault(); }}>Dashboard</Link>
       <Link to="/clinic-setup" onClick={event => { if (busy || (dirty && !window.confirm("Discard unsaved doctor changes?"))) event.preventDefault(); }}>Clinic Setup</Link>
       <span aria-current="page">Manage Doctors</span>
     <Link to="/patients" onClick={event => { if (busy || (dirty && !window.confirm("Discard unsaved changes?"))) event.preventDefault(); }}>Patients</Link><Link to="/appointments" onClick={event => { if (busy || (dirty && !window.confirm("Discard unsaved changes?"))) event.preventDefault(); }}>Appointments</Link></nav><LogoutButton disabled={busy} hasUnsavedChanges={dirty} /></div>

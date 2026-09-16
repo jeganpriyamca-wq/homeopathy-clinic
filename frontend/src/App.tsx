@@ -15,6 +15,7 @@ import ReceptionDashboard from "./pages/ReceptionDashboard";
 export default function App() {
   return (
     <Routes>
+      <Route path="/dashboard" element={<AppointmentsPage dashboardTitle="Clinic Dashboard" />} />
       <Route path="/appointments" element={<AppointmentsPage />} />
       <Route path="/patients" element={<PatientsPage />} />
       <Route path="/manage-doctors" element={<ManageDoctorsPage />} />

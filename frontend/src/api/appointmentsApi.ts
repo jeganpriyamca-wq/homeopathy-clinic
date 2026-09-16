@@ -1,7 +1,12 @@
 import axios from "axios";
-export type AppointmentStatus = "BOOKED" | "ARRIVED" | "COMPLETED" | "CANCELLED" | "NO_SHOW";
+export type AppointmentStatus = "BOOKED" | "ARRIVED" | "IN_CONSULTATION" | "COMPLETED" | "CANCELLED" | "NO_SHOW";
+export const appointmentStatusLabel = (status: AppointmentStatus) => ({
+  BOOKED: "Booked", ARRIVED: "Checked in · Waiting", IN_CONSULTATION: "Consultation in progress",
+  COMPLETED: "Checked out", CANCELLED: "Cancelled", NO_SHOW: "No-show",
+}[status]);
 export type Appointment = { id: number; version: number; doctorId: number; doctorName: string;
-  patientId: number; patientNumber: string; patientName: string; date: string; time: string; endTime: string; status: AppointmentStatus };
+  patientId: number; patientNumber: string; patientName: string; date: string; time: string; endTime: string; status: AppointmentStatus;
+  checkedInAt: string | null; consultationStartedAt: string | null; checkedOutAt: string | null; followUpForId: number | null };
 export async function patientAppointments(token: string, patientId: number, signal?: AbortSignal): Promise<Appointment[]> {
   return (await axios.get(url + "/patient/" + patientId, {...config(token), signal})).data;
 }
@@ -22,8 +27,8 @@ export async function dailyAppointments(token: string, date: string, doctorId?: 
 export async function appointmentSlots(token: string, doctorId: number, date: string, excludeId?: number, signal?: AbortSignal): Promise<AppointmentSlot[]> {
   return (await axios.get(url + "/slots", {...config(token), params:{doctorId,date,excludeId}, signal})).data.slots;
 }
-export async function bookAppointment(token: string, doctorId: number, patientId: number, date: string, time: string): Promise<Appointment> {
-  return (await axios.post(url,{doctorId,patientId,date,time},config(token))).data;
+export async function bookAppointment(token: string, doctorId: number, patientId: number, date: string, time: string, followUpForId?: number): Promise<Appointment> {
+  return (await axios.post(url,{doctorId,patientId,date,time,followUpForId},config(token))).data;
 }
 export async function moveAppointment(token: string, appointment: Appointment, date: string, time: string): Promise<Appointment> {
   return (await axios.put(url + "/" + appointment.id,{version:appointment.version,date,time},config(token))).data;

@@ -63,6 +63,8 @@ class AppointmentPersistenceTest {
         return doctors.saveAndFlush(d);
     }
     @AfterEach void cleanup() {
+        // Follow-up rows reference earlier visits; remove those references first.
+        appointments.findAll().forEach(a -> { a.followUpFor = null; appointments.saveAndFlush(a); });
         appointments.deleteAllInBatch();doctors.deleteAllInBatch();patients.deleteAllInBatch();users.deleteAllInBatch();clinics.deleteAllInBatch();
     }
     @Test void patientAppointmentsAreScopedSortedAndIncludeHistory() {
@@ -147,11 +149,45 @@ class AppointmentPersistenceTest {
         a.startsAt = Instant.now().minusSeconds(7200); a.endsAt = Instant.now().minusSeconds(5400);
         appointments.saveAndFlush(a);
         var current = service.day(admin,a.startsAt.atZone(AppointmentService.ZONE).toLocalDate(),doctorId).getFirst();
-        var arrived = service.status(actor("DOCTOR",doctorUserId),current.id(),new StatusChange(current.version(),Appointment.Status.ARRIVED));
+        var reception = actor("RECEPTIONIST",999L);
+        var own = actor("DOCTOR",doctorUserId);
+        assertEquals(403,assertThrows(ResponseStatusException.class,()->service.status(own,current.id(),new StatusChange(current.version(),Appointment.Status.ARRIVED))).getStatusCode().value());
+        var arrived = service.status(reception,current.id(),new StatusChange(current.version(),Appointment.Status.ARRIVED));
+        assertNotNull(arrived.checkedInAt());
+        assertNull(arrived.consultationStartedAt());
+        assertThrows(ResponseStatusException.class,()->service.status(reception,arrived.id(),new StatusChange(arrived.version(),Appointment.Status.COMPLETED)));
         assertThrows(ResponseStatusException.class,()->service.status(admin,current.id(),new StatusChange(current.version(),Appointment.Status.COMPLETED)));
-        var completed = service.status(actor("DOCTOR",doctorUserId),arrived.id(),new StatusChange(arrived.version(),Appointment.Status.COMPLETED));
+        var consulting = service.status(own,arrived.id(),new StatusChange(arrived.version(),Appointment.Status.IN_CONSULTATION));
+        assertEquals(Appointment.Status.IN_CONSULTATION,service.patient(reception,patientId).getFirst().status());
+        assertNotNull(consulting.consultationStartedAt());
+        assertEquals(arrived.checkedInAt().getEpochSecond(),consulting.checkedInAt().getEpochSecond());
+        assertEquals(403,assertThrows(ResponseStatusException.class,()->service.status(own,consulting.id(),new StatusChange(consulting.version(),Appointment.Status.COMPLETED))).getStatusCode().value());
+        var completed = service.status(reception,consulting.id(),new StatusChange(consulting.version(),Appointment.Status.COMPLETED));
+        assertNotNull(completed.checkedOutAt());
         assertEquals(Appointment.Status.COMPLETED,completed.status());
         assertThrows(ResponseStatusException.class,()->service.status(admin,completed.id(),new StatusChange(completed.version(),Appointment.Status.BOOKED)));
+    }
+    @Test void followUpRequiresCheckedOutVisitAndPreservesThePatientAndDoctor() {
+        var previous = book(LocalTime.of(10,0));
+        var request = new Booking(doctorId,patientId,date.plusWeeks(1),LocalTime.of(10,0),previous.id());
+        assertEquals(409,assertThrows(ResponseStatusException.class,()->service.create(admin,request)).getStatusCode().value());
+        var stored = appointments.findById(previous.id()).orElseThrow();
+        stored.status = Appointment.Status.COMPLETED;
+        appointments.saveAndFlush(stored);
+        assertThrows(ResponseStatusException.class,()->service.create(admin,new Booking(otherDoctorId,patientId,date.plusWeeks(1),LocalTime.of(10,0),previous.id())));
+        Patient other = new Patient();other.setPatientNumber("PAT-OTHER");other.setFirstName("Other");other.setLastName("Patient");other.setPhone("1000000002");
+        Long otherId = patients.saveAndFlush(other).getId();
+        assertThrows(ResponseStatusException.class,()->service.create(admin,new Booking(doctorId,otherId,date.plusWeeks(1),LocalTime.of(10,0),previous.id())));
+        assertThrows(ResponseStatusException.class,()->service.create(admin,new Booking(doctorId,patientId,date,LocalTime.of(9,0),previous.id())));
+        var followUp = service.create(actor("RECEPTIONIST",999L),request);
+        assertEquals(previous.id(),followUp.followUpForId());
+        assertEquals(previous.patientId(),followUp.patientId());
+        assertEquals(previous.doctorId(),followUp.doctorId());
+        assertEquals(Appointment.Status.BOOKED,followUp.status());
+        assertEquals(previous.id(),service.patient(admin,patientId).getFirst().followUpForId());
+        assertEquals(Appointment.Status.COMPLETED,service.day(admin,date,doctorId).getFirst().status());
+        service.create(admin,new Booking(doctorId,patientId,date,LocalTime.of(10,30),previous.id()));
+        assertEquals(List.of(LocalTime.of(9,0),LocalTime.of(9,30)),service.slots(admin,doctorId,date,null).times());
     }
     @Test void concurrentBookingsHaveExactlyOneWinner() throws Exception {
         var gate = new CountDownLatch(1);

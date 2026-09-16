@@ -162,10 +162,11 @@ export default function PatientsPage() {
   return <main className="clinic-setup"><div className="setup-shell">
     <header className="clinic-topbar">
       <nav className="clinic-admin-nav" aria-label="Clinic navigation">
-        {user.role === "ADMIN" ? <>
+        <Link to={user.role === "ADMIN" ? "/dashboard" : user.role === "DOCTOR" ? "/doctor" : "/reception"} onClick={event => { if (!mayLeave()) event.preventDefault(); }}>Dashboard</Link>
+        {user.role === "ADMIN" && <>
           <Link to="/clinic-setup" onClick={event => { if (!mayLeave()) event.preventDefault(); }}>Clinic Setup</Link>
           <Link to="/manage-doctors" onClick={event => { if (!mayLeave()) event.preventDefault(); }}>Manage Doctors</Link>
-        </> : <Link to={user.role === "DOCTOR" ? "/doctor" : "/reception"} onClick={event => { if (!mayLeave()) event.preventDefault(); }}>Dashboard</Link>}
+        </>}
         <span aria-current="page">Patients</span>
         <Link to="/appointments" onClick={event => { if (!mayLeave()) event.preventDefault(); }}>Appointments</Link>
       </nav>

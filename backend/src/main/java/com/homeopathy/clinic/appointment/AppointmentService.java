@@ -80,6 +80,15 @@ public class AppointmentService {
         if (!patient.isActive()) throw problem(HttpStatus.CONFLICT, "This patient is inactive.");
         validateSlot(doctor, request.date(), request.time(), null);
         var a = new Appointment(); a.doctor = doctor; a.patient = patient;
+        if (request.followUpForId() != null) {
+            var previous = find(request.followUpForId());
+            if (previous.status != Appointment.Status.COMPLETED || !previous.patient.getId().equals(request.patientId())
+                || !previous.doctor.getId().equals(request.doctorId()))
+                throw problem(HttpStatus.CONFLICT, "A follow-up must use the patient and doctor from a checked-out visit.");
+            if (!request.date().atTime(request.time()).atZone(ZONE).toInstant().isAfter(previous.startsAt))
+                throw problem(HttpStatus.CONFLICT, "A follow-up must be after the original appointment.");
+            a.followUpFor = previous;
+        }
         setTime(a, request.date(), request.time());
         return View.from(appointments.saveAndFlush(a));
     }
@@ -100,17 +109,22 @@ public class AppointmentService {
         version(a, request.version());
         boolean allowed = switch(a.status) {
             case BOOKED -> Set.of(Appointment.Status.ARRIVED, Appointment.Status.CANCELLED, Appointment.Status.NO_SHOW).contains(request.status());
-            case ARRIVED -> Set.of(Appointment.Status.COMPLETED, Appointment.Status.CANCELLED).contains(request.status());
+            case ARRIVED -> Set.of(Appointment.Status.IN_CONSULTATION, Appointment.Status.CANCELLED).contains(request.status());
+            case IN_CONSULTATION -> request.status() == Appointment.Status.COMPLETED;
             default -> false;
         };
         if (!allowed) throw problem(HttpStatus.CONFLICT, "That status change is not allowed. Reload the appointment.");
-        if (!manager(actor) && request.status() == Appointment.Status.CANCELLED)
-            throw problem(HttpStatus.FORBIDDEN, "Ask reception to cancel this booking.");
+        if (!manager(actor) && request.status() != Appointment.Status.IN_CONSULTATION)
+            throw problem(HttpStatus.FORBIDDEN, "Reception manages check-in, check-out, cancellations and no-shows.");
         if (request.status() != Appointment.Status.CANCELLED && a.startsAt.atZone(ZONE).toLocalDate().isAfter(LocalDate.now(ZONE)))
-            throw problem(HttpStatus.CONFLICT, "A future appointment cannot be marked arrived, completed or no-show.");
+            throw problem(HttpStatus.CONFLICT, "A future appointment cannot be checked in, started, checked out or marked no-show.");
         if (request.status() == Appointment.Status.NO_SHOW && Instant.now().isBefore(a.endsAt))
             throw problem(HttpStatus.CONFLICT, "Mark no-show only after the appointment end time.");
         a.status = request.status();
+        var now = Instant.now();
+        if (a.status == Appointment.Status.ARRIVED) a.checkedInAt = now;
+        if (a.status == Appointment.Status.IN_CONSULTATION) a.consultationStartedAt = now;
+        if (a.status == Appointment.Status.COMPLETED) a.checkedOutAt = now;
         return View.from(appointments.saveAndFlush(a));
     }
     private List<LocalTime> available(DoctorProfile doctor, LocalDate date, Long excludeId) {
@@ -120,7 +134,8 @@ public class AppointmentService {
         var settings = doctor.details();
         var hours = settings.workingHours().stream().filter(d -> d.day() == date.getDayOfWeek()).findFirst().orElse(null);
         if (hours == null || hours.closed()) return List.of();
-        var booked = appointments.doctorDay(doctor.getId(), date.atStartOfDay(ZONE).toInstant(), date.plusDays(1).atStartOfDay(ZONE).toInstant());
+        var booked = appointments.doctorDay(doctor.getId(), date.atStartOfDay(ZONE).toInstant(), date.plusDays(1).atStartOfDay(ZONE).toInstant())
+            .stream().map(a -> org.hibernate.Hibernate.unproxy(a, Appointment.class)).toList();
         var result = new ArrayList<Slot>();
         var now = Instant.now();
         // Date-time arithmetic avoids LocalTime wrapping at midnight.
@@ -151,7 +166,10 @@ public class AppointmentService {
     private void version(Appointment a, Long version) {
         if (!Objects.equals(a.version, version)) throw problem(HttpStatus.CONFLICT, "Appointment changed. Reload before trying again.");
     }
-    private Appointment find(Long id) { return appointments.findById(id).orElseThrow(() -> problem(HttpStatus.NOT_FOUND, "Appointment not found.")); }
+    private Appointment find(Long id) {
+        return org.hibernate.Hibernate.unproxy(appointments.findById(id)
+            .orElseThrow(() -> problem(HttpStatus.NOT_FOUND, "Appointment not found.")), Appointment.class);
+    }
     private DoctorProfile doctor(Long id) { return doctors.findById(id).orElseThrow(() -> problem(HttpStatus.NOT_FOUND, "Doctor not found.")); }
     private DoctorProfile lockDoctor(Long id) { return doctors.lockForAppointment(id).orElseThrow(() -> problem(HttpStatus.NOT_FOUND, "Doctor not found.")); }
     private ResponseStatusException problem(HttpStatus status, String message) { return new ResponseStatusException(status, message); }
