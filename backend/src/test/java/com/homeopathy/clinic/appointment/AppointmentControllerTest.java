@@ -21,6 +21,20 @@ class AppointmentControllerTest {
     @Autowired MockMvc mvc;
     @MockitoBean AppointmentService service;
     @MockitoBean JwtDecoder decoder;
+    @Test void slotResponseIncludesAvailabilityAndRetainsAvailableTimes() throws Exception {
+        var date = java.time.LocalDate.of(2030,1,7);
+        var time = java.time.LocalTime.of(9,0);
+        when(service.slots(any(),eq(1L),eq(date),isNull())).thenReturn(new AppointmentDtos.Slots(
+            1L,date,"Asia/Kolkata",List.of(time),List.of(new AppointmentDtos.Slot(time,true),
+            new AppointmentDtos.Slot(time.plusMinutes(30),false))));
+        mvc.perform(get("/api/appointments/slots?doctorId=1&date=2030-01-07")
+            .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_RECEPTIONIST"))))
+            .andExpect(status().isOk()).andExpect(header().string("Cache-Control","no-store"))
+            .andExpect(jsonPath("$.times[0]").value("09:00:00"))
+            .andExpect(jsonPath("$.slots[0].available").value(true))
+            .andExpect(jsonPath("$.slots[1].time").value("09:30:00"))
+            .andExpect(jsonPath("$.slots[1].available").value(false));
+    }
     @Test void anonymousAndUnknownRolesAreDenied() throws Exception {
         mvc.perform(get("/api/appointments?date=2030-01-01")).andExpect(status().isUnauthorized());
         mvc.perform(get("/api/appointments?date=2030-01-01").with(jwt().authorities(new SimpleGrantedAuthority("ROLE_OTHER")))).andExpect(status().isForbidden());

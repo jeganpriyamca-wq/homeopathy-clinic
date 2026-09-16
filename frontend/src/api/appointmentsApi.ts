@@ -6,6 +6,7 @@ export async function patientAppointments(token: string, patientId: number, sign
   return (await axios.get(url + "/patient/" + patientId, {...config(token), signal})).data;
 }
 export type BookingDoctor = { id: number; name: string; active: boolean };
+export type AppointmentSlot = { time: string; available: boolean };
 const url = `${import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080"}/api/appointments`;
 const config = (token: string) => ({ headers: { Authorization: `Bearer ${token}` } });
 export const clinicToday = () => {
@@ -18,8 +19,8 @@ export async function appointmentDoctors(token: string, signal?: AbortSignal): P
 export async function dailyAppointments(token: string, date: string, doctorId?: number, signal?: AbortSignal): Promise<Appointment[]> {
   return (await axios.get(url, {...config(token), params:{date,doctorId}, signal})).data;
 }
-export async function appointmentSlots(token: string, doctorId: number, date: string, excludeId?: number, signal?: AbortSignal): Promise<string[]> {
-  return (await axios.get(url + "/slots", {...config(token), params:{doctorId,date,excludeId}, signal})).data.times;
+export async function appointmentSlots(token: string, doctorId: number, date: string, excludeId?: number, signal?: AbortSignal): Promise<AppointmentSlot[]> {
+  return (await axios.get(url + "/slots", {...config(token), params:{doctorId,date,excludeId}, signal})).data.slots;
 }
 export async function bookAppointment(token: string, doctorId: number, patientId: number, date: string, time: string): Promise<Appointment> {
   return (await axios.post(url,{doctorId,patientId,date,time},config(token))).data;

@@ -1,3 +1,4 @@
+import AppointmentSlotPicker from "../components/AppointmentSlotPicker";
 import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { Link, Navigate } from "react-router-dom";
@@ -6,7 +7,7 @@ import LogoutButton from "../components/LogoutButton";
 import { patientError, searchPatients } from "../api/patientsApi";
 import type { PatientSummary } from "../api/patientsApi";
 import { appointmentDoctors, appointmentSlots, bookAppointment, changeAppointmentStatus, clinicToday, dailyAppointments, moveAppointment } from "../api/appointmentsApi";
-import type { Appointment, AppointmentStatus, BookingDoctor } from "../api/appointmentsApi";
+import type { Appointment, AppointmentSlot, AppointmentStatus, BookingDoctor } from "../api/appointmentsApi";
 import "./ClinicSetupPage.css";
 import "./PatientsPage.css";
 import "./AppointmentsPage.css";
@@ -31,7 +32,7 @@ export default function AppointmentsPage({ dashboardTitle }: { dashboardTitle?: 
   const [doctorId,setDoctorId] = useState("");
   const [bookingDate,setBookingDate] = useState(clinicToday);
   const [time,setTime] = useState("");
-  const [slots,setSlots] = useState<string[]>([]);
+  const [slots,setSlots] = useState<AppointmentSlot[]>([]);
   const [slotLoading,setSlotLoading] = useState(false);
   const [slotError,setSlotError] = useState("");
   const [query,setQuery] = useState("");
@@ -95,7 +96,7 @@ export default function AppointmentsPage({ dashboardTitle }: { dashboardTitle?: 
   }
   async function save(e: FormEvent) {
     e.preventDefault();
-    if (!token || inFlight.current || !time || !doctorId || (!editing && !patient)) return;
+    if (!token || inFlight.current || slotLoading || slotError || !slots.some(slot => slot.time === time && slot.available) || !doctorId || (!editing && !patient)) return;
     inFlight.current=true;setBusy(true);setFormError("");
     try {
       const saved = editing ? await moveAppointment(token,editing,bookingDate,time)
@@ -154,14 +155,10 @@ export default function AppointmentsPage({ dashboardTitle }: { dashboardTitle?: 
               <button type="button" className="patient-secondary" onClick={()=>{setPatient(p);setQuery(p.firstName+" "+p.lastName);}}>
                 {p.firstName} {p.lastName} · {p.patientNumber} · DOB {p.dateOfBirth ?? "unknown"} · {p.phone}</button></li>)}</ul>}
         </div>}
-        <div className="setup-field setup-wide"><label htmlFor="booking-time">Available time (IST) *</label>
-          <select id="booking-time" required value={time} disabled={slotLoading || !!slotError} onChange={e=>setTime(e.target.value)}>
-            <option value="">Select an available time</option>{slots.map(t=><option key={t} value={t}>{t.slice(0,5)}</option>)}</select>
-          {slotLoading ? <p role="status">Checking availability...</p> : slotError ? <p role="alert">{slotError}</p> :
-            doctorId && bookingDate && slots.length===0 && <p>No available slots. Choose another date or doctor.</p>}
-        </div>
+        <AppointmentSlotPicker slots={slots} time={time} loading={slotLoading} error={slotError}
+          ready={!!doctorId && !!bookingDate} onChange={setTime} />
       </div><footer className="setup-actions"><button type="button" onClick={()=>{if(mayLeave())setOpen(false);}}>Cancel</button>
-        <button type="submit" disabled={!time || slotLoading || (!editing&&!patient)}>{busy?"Saving...":editing?"Save new time":"Confirm booking"}</button></footer></fieldset>
+        <button type="submit" disabled={!time || slotLoading || !!slotError || (!editing&&!patient)}>{busy?"Saving...":editing?"Save new time":"Confirm booking"}</button></footer></fieldset>
     </form>}
 
     {actionError && <p className="setup-error" role="alert">{actionError}</p>}

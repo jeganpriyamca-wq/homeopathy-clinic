@@ -11,7 +11,8 @@ public final class AppointmentDtos {
     public record Reschedule(@NotNull @Min(0) Long version, @NotNull LocalDate date, @NotNull LocalTime time) {}
     public record StatusChange(@NotNull @Min(0) Long version, @NotNull Appointment.Status status) {}
     public record DoctorOption(Long id, String name, boolean active) {}
-    public record Slots(Long doctorId, LocalDate date, String timezone, List<LocalTime> times) {}
+    public record Slot(LocalTime time, boolean available) {}
+    public record Slots(Long doctorId, LocalDate date, String timezone, List<LocalTime> times, List<Slot> slots) {}
     public record View(Long id, Long version, Long doctorId, String doctorName, Long patientId,
                        String patientNumber, String patientName, LocalDate date, LocalTime time,
                        LocalTime endTime, Appointment.Status status) {

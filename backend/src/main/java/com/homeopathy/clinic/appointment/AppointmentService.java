@@ -68,7 +68,9 @@ public class AppointmentService {
             if (!excluded.doctor.getId().equals(doctorId) || excluded.status != Appointment.Status.BOOKED)
                 throw problem(HttpStatus.BAD_REQUEST, "Only a booked appointment for this doctor can be rescheduled.");
         }
-        return new Slots(doctorId, date, ZONE.getId(), available(doctor, date, excludeId));
+        var slots = slotAvailability(doctor, date, excludeId);
+        return new Slots(doctorId, date, ZONE.getId(),
+            slots.stream().filter(Slot::available).map(Slot::time).toList(), slots);
     }
     public View create(Jwt actor, Booking request) {
         requireManager(actor);
@@ -112,23 +114,24 @@ public class AppointmentService {
         return View.from(appointments.saveAndFlush(a));
     }
     private List<LocalTime> available(DoctorProfile doctor, LocalDate date, Long excludeId) {
-        if (!doctor.getUser().isActive() || date.isBefore(LocalDate.now(ZONE))) return List.of();
+        return slotAvailability(doctor, date, excludeId).stream().filter(Slot::available).map(Slot::time).toList();
+    }
+    private List<Slot> slotAvailability(DoctorProfile doctor, LocalDate date, Long excludeId) {
         var settings = doctor.details();
         var hours = settings.workingHours().stream().filter(d -> d.day() == date.getDayOfWeek()).findFirst().orElse(null);
         if (hours == null || hours.closed()) return List.of();
         var booked = appointments.doctorDay(doctor.getId(), date.atStartOfDay(ZONE).toInstant(), date.plusDays(1).atStartOfDay(ZONE).toInstant());
-        var result = new ArrayList<LocalTime>();
+        var result = new ArrayList<Slot>();
         var now = Instant.now();
         // Date-time arithmetic avoids LocalTime wrapping at midnight.
         for (var start = date.atTime(hours.opensAt()); !start.plusMinutes(settings.appointmentDuration()).isAfter(date.atTime(hours.closesAt()));
              start = start.plusMinutes(settings.appointmentDuration())) {
             var from = start.atZone(ZONE).toInstant();
             var to = start.plusMinutes(settings.appointmentDuration()).atZone(ZONE).toInstant();
-            if (from.isBefore(now)) continue;
             boolean overlaps = booked.stream().anyMatch(a -> !Objects.equals(a.id, excludeId)
                 && a.status != Appointment.Status.CANCELLED && a.status != Appointment.Status.NO_SHOW
                 && a.startsAt.isBefore(to) && a.endsAt.isAfter(from));
-            if (!overlaps) result.add(start.toLocalTime());
+            result.add(new Slot(start.toLocalTime(), doctor.getUser().isActive() && !from.isBefore(now) && !overlaps));
         }
         return result;
     }

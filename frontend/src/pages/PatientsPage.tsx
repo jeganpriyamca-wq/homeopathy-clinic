@@ -1,5 +1,6 @@
+import AppointmentSlotPicker from "../components/AppointmentSlotPicker";
 import { appointmentDoctors, appointmentSlots, bookAppointment, clinicToday } from "../api/appointmentsApi";
-import type { BookingDoctor } from "../api/appointmentsApi";
+import type { AppointmentSlot, BookingDoctor } from "../api/appointmentsApi";
 import PatientAppointments from "../components/PatientAppointments";
 import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
@@ -26,7 +27,7 @@ export default function PatientsPage() {
   const [bookingDoctor, setBookingDoctor] = useState("");
   const [bookingDate, setBookingDate] = useState(clinicToday);
   const [bookingTime, setBookingTime] = useState("");
-  const [bookingSlots, setBookingSlots] = useState<string[]>([]);
+  const [bookingSlots, setBookingSlots] = useState<AppointmentSlot[]>([]);
   const [bookingLoading, setBookingLoading] = useState(false);
   const [bookingError, setBookingError] = useState("");
   const [bookingRefresh, setBookingRefresh] = useState(0);
@@ -131,7 +132,7 @@ export default function PatientsPage() {
   async function save(event: FormEvent) {
     event.preventDefault();
     if (!token || inFlight.current || (matches.length > 0 && !acknowledged)) return;
-    if (bookAfterRegistration && (!bookingDoctor || !bookingTime || bookingLoading)) return;
+    if (bookAfterRegistration && (!bookingDoctor || bookingLoading || !!bookingError || !bookingSlots.some(slot => slot.time === bookingTime && slot.available))) return;
     inFlight.current = true; setBusy(true); setError("");
     try {
       const details = { ...values, firstName: values.firstName.trim(), lastName: values.lastName.trim(),
@@ -248,17 +249,16 @@ export default function PatientsPage() {
             <div className="setup-grid">
               <div className="setup-field"><label htmlFor="registration-doctor">Doctor *</label><select id="registration-doctor" required value={bookingDoctor} onChange={event => { setBookingDoctor(event.target.value); setDirty(true); }}><option value="">Select doctor</option>{bookingDoctors.map(doctor => <option key={doctor.id} value={doctor.id}>{doctor.name}</option>)}</select></div>
               <div className="setup-field"><label htmlFor="registration-date">Appointment date *</label><input id="registration-date" type="date" required min={clinicToday()} value={bookingDate} onChange={event => { setBookingDate(event.target.value); setDirty(true); }} /></div>
-              <div className="setup-field"><label htmlFor="registration-time">Available time *</label><select id="registration-time" required disabled={bookingLoading || !bookingDoctor} value={bookingTime} onChange={event => { setBookingTime(event.target.value); setDirty(true); }}><option value="">Select time</option>{bookingSlots.map(time => <option key={time} value={time}>{time.slice(0, 5)}</option>)}</select></div>
+              <AppointmentSlotPicker slots={bookingSlots} time={bookingTime} loading={bookingLoading} error={bookingError}
+                ready={!!bookingDoctor && !!bookingDate} onChange={time => { setBookingTime(time); setDirty(true); }} />
             </div>
-            {bookingLoading && <p role="status">Loading available times...</p>}
-            {bookingError ? <p role="alert">{bookingError}</p> : bookingDoctor && !bookingLoading && bookingSlots.length === 0 && <p>No available times. Choose another date or doctor.</p>}
             <button type="button" className="patient-secondary" onClick={() => setBookingRefresh(value => value + 1)}>Refresh availability</button>
           </>}
         </section>}
         <footer className="setup-actions"><button type="button" onClick={() => {
           if (!mayLeave()) return;
           setDirty(false); setMatches([]); setError(""); setMode(selected ? "view" : "list");
-        }}>Cancel</button><button type="submit" disabled={(matches.length > 0 && !acknowledged) || (bookAfterRegistration && (bookingLoading || !bookingTime))}>
+        }}>Cancel</button><button type="submit" disabled={(matches.length > 0 && !acknowledged) || (bookAfterRegistration && (bookingLoading || !!bookingError || !bookingTime))}>
           {busy ? "Saving..." : bookAfterRegistration ? selected ? "Save and book appointment" : "Register and book appointment" : selected ? "Save changes" : "Register patient"}</button></footer>
       </fieldset>
     </form>}

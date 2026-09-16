@@ -94,6 +94,22 @@ class AppointmentPersistenceTest {
         assertEquals(1,service.day(admin,date,null).size());
         assertEquals(1,appointments.count());
     }
+    @Test void slotGridIncludesUnavailableTimesAndExcludesTheBookingBeingMoved() {
+        var booking = book(LocalTime.of(9,0));
+        var grid = service.slots(admin,doctorId,date,null);
+        assertEquals(List.of(new Slot(LocalTime.of(9,0),false), new Slot(LocalTime.of(9,30),true),
+            new Slot(LocalTime.of(10,0),true), new Slot(LocalTime.of(10,30),true)), grid.slots());
+        assertEquals(grid.times(), grid.slots().stream().filter(Slot::available).map(Slot::time).toList());
+        assertTrue(service.slots(admin,doctorId,date,booking.id()).slots().getFirst().available());
+        service.status(admin,booking.id(),new StatusChange(booking.version(),Appointment.Status.CANCELLED));
+        assertTrue(service.slots(admin,doctorId,date,null).slots().stream().allMatch(Slot::available));
+        var past = service.slots(admin,doctorId,date.minusWeeks(104),null);
+        assertEquals(4,past.slots().size());
+        assertTrue(past.slots().stream().noneMatch(Slot::available));
+        assertTrue(service.slots(admin,doctorId,date.with(TemporalAdjusters.next(DayOfWeek.SUNDAY)),null).slots().isEmpty());
+        User user = users.findById(doctorUserId).orElseThrow();user.setActive(false);users.saveAndFlush(user);
+        assertTrue(service.slots(admin,doctorId,date,null).slots().stream().noneMatch(Slot::available));
+    }
     @Test void rescheduleUsesVersionAndCancellationReleasesSlot() {
         var first = book(LocalTime.of(9,0));
         var moved = service.reschedule(admin,first.id(),new Reschedule(first.version(),date,LocalTime.of(10,0)));

@@ -13,7 +13,7 @@ This feature builds on the patient registration branch. Admins and receptionists
 
 ## Time and availability
 All input dates/times are Asia/Kolkata. The database stores start/end instants; API views return clinic-local dates and times.
-Slots use the doctor's working days and appointment duration, aligned from opening time. Closed days, past slots, inactive doctors and overlapping occupied slots are excluded.
+Slots use the doctor's working days and appointment duration, aligned from opening time. The booking and rescheduling forms show a time grid: available slots are green, unavailable slots are grey and disabled, and the selected slot is dark green with a Selected label. Past slots, inactive doctors and overlapping occupied slots are unavailable. Closed days return an empty grid.
 Cancelled/no-show visits do not occupy slots. Existing booking end times remain fixed if a doctor's duration later changes.
 Doctor hours are independent of the clinic's default hours. This version prevents doctor overlaps; it does not prevent the same patient booking different doctors at overlapping times.
 
@@ -30,6 +30,7 @@ Every endpoint requires a staff bearer token. All successful responses have Cach
 | PATCH | /api/appointments/{id}/status | Update status |
 
 For rescheduling, slots accepts excludeId for the BOOKED appointment of that doctor.
+The response retains `times` (available times only) and adds `slots`, containing every scheduled time and its availability, for example `[{"time":"09:00:00","available":true},{"time":"09:30:00","available":false}]`. Both lists use the same availability rules as booking validation. No patient details are included in slot availability.
 
 POST:
 ```json
@@ -56,6 +57,7 @@ Direct database inserts bypass this service-level overlap protection. There is n
 No live clinic database was changed during implementation.
 
 ## Testing
+- Time-grid update: TypeScript check and four component rendering tests passed (`cd frontend && node tests/appointment-slot-picker.test.cjs`). New backend tests cover slot flags, rescheduling exclusions, cancellation, past/closed days and inactive doctors, plus the JSON response. These new backend tests have not been run here because Java/Maven are unavailable; downloading them failed. The Vite build is blocked by a local subprocess `spawn EPERM` error. Browser interaction and a live PostgreSQL check remain unverified for this update. Restart the backend with the updated API before using the new frontend.
 - Backend: cd backend && mvn test (Java 21). 38 tests passed, including real parallel transactions with exactly one successful booking of a shared slot, lifecycle/version checks, doctor ownership, inactive accounts, working hours and existing patient/doctor tests.
 - Tests use H2 in PostgreSQL compatibility mode. PostgreSQL locking/schema behavior still needs confirmation in the development database.
 - Frontend TypeScript check passed.
