@@ -1,0 +1,13 @@
+.appointment-slot-picker { min-width: 0; margin: 0; padding: 0; border: 0; }
+.appointment-slot-picker legend { font-weight: 600; }
+.appointment-slot-picker > p { color: #526562; font-size: 14px; }
+.appointment-slot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 10px; }
+.appointment-slot { position: relative; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 14px 8px; border: 2px solid #81bc94; border-radius: 10px; background: #e9f7ed; color: #205b35; cursor: pointer; }
+.appointment-slot input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.appointment-slot-time { font-size: 17px; font-weight: 700; }
+.appointment-slot-state { font-size: 12px; }
+.appointment-slot:not(.is-unavailable):hover { background: #d7efdf; border-color: #287747; }
+.appointment-slot.is-selected, .appointment-slot.is-selected:hover { background: #246b40; border-color: #184d2d; color: white; }
+.appointment-slot:focus-within { outline: 3px solid #245aaf; outline-offset: 3px; }
+.appointment-slot.is-unavailable { background: #edf0ef; border-color: #d2d8d5; color: #626b67; cursor: not-allowed; }
+fieldset:disabled .appointment-slot { cursor: not-allowed; }

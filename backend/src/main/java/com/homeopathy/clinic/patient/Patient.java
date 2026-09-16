@@ -11,6 +11,13 @@ public class Patient {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
+  @Version
+  @Column(nullable = false, columnDefinition = "bigint default 0")
+  private Long version;
+
+  @Column(length = 1000)
+  private String address;
+
   @Column(name = "patient_number", nullable = false, unique = true, length = 30)
   private String patientNumber;
 
@@ -43,6 +50,10 @@ public class Patient {
   void onUpdate() {
     updatedAt = OffsetDateTime.now();
   }
+
+  public Long getVersion() { return version; }
+  public String getAddress() { return address; }
+  public void setAddress(String address) { this.address = address; }
 
   public Long getId() {
     return id;

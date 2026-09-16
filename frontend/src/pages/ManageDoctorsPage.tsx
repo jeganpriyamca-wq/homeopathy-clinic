@@ -126,9 +126,10 @@ export default function ManageDoctorsPage() {
 
   return <main className="clinic-setup"><div className="setup-shell">
     <div className="clinic-topbar"><nav className="clinic-admin-nav" aria-label="Administration">
+      <Link to="/dashboard" onClick={event => { if (busy || (dirty && !window.confirm("Discard unsaved doctor changes?"))) event.preventDefault(); }}>Dashboard</Link>
       <Link to="/clinic-setup" onClick={event => { if (busy || (dirty && !window.confirm("Discard unsaved doctor changes?"))) event.preventDefault(); }}>Clinic Setup</Link>
       <span aria-current="page">Manage Doctors</span>
-    </nav><LogoutButton disabled={busy} hasUnsavedChanges={dirty} /></div>
+    <Link to="/patients" onClick={event => { if (busy || (dirty && !window.confirm("Discard unsaved changes?"))) event.preventDefault(); }}>Patients</Link><Link to="/appointments" onClick={event => { if (busy || (dirty && !window.confirm("Discard unsaved changes?"))) event.preventDefault(); }}>Appointments</Link></nav><LogoutButton disabled={busy} hasUnsavedChanges={dirty} /></div>
     <header className="setup-page-heading"><div><p className="setup-eyebrow">CLINIC TEAM</p><h1>Manage Doctors</h1>
       <p>Give each doctor their own login, fees and working hours.</p></div>
       {!showForm && <button className="doctor-primary" onClick={() => open(null)} disabled={loading || loadFailed || busy}>Add doctor</button>}
